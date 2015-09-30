@@ -15,12 +15,8 @@
     "jsonwebtoken": "^5.0.5",
     "knex": "^0.8.6",
     "multer": "^1.0.5",
-    "pg": "^4.4.1",
-    "passport" : "^0.3.0 ",
-    "passport-local" : "^1.0.0",
-    "connect-flash" : "~0.1.1",     
-    "bcrypt-nodejs" : "latest",
-    "connect-ensure-login" : "*"
+    "pg": "^4.4.1", 
+    "bcrypt-nodejs" : "latest"
   },
   "engines": {
     "node": "0.12.7"

@@ -1,6 +1,5 @@
 var express 		= require('express');
-var passport 		= require('passport');
-var LocalStrategy = require('passport-local').Strategy;
+var jwt    			= require('jsonwebtoken');
 var fs 				= require('fs');
 var Knex 			= require('knex');
 var cookieParser 	= require('cookie-parser');
@@ -26,81 +25,97 @@ var knex = Knex({
 //Load local access objects
 var contact = require("./server/contact")(knex);
 
-//Configure Passport
-passport.use(new LocalStrategy(
-	function(username, password, done) {
-		contact.findByUsername(username, function(user, err){
-			console.log(user);
-			if(err){return done(err);}
-			else if(!user){return done(null, false);}
-			else if(user.password__c != password){return done(null, false);}
-			else return done(null, user);
-		});
-	}
-));
-
-passport.serializeUser(function(user, cb) {
-  cb(null, user.sfid);
-});
-
-passport.deserializeUser(function(id, cb) {
-	contact.findBySfid(id, function(user, err){
-		if(err){
-			return cb(err);
-		}else{
-			cb(null, user);
-		}
-	});
-});
-
 
 //Main app
 var app = express();
 app.set('port', (process.env.PORT || 5000));
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
-
 app.use(express.static(__dirname + '/public'));
 
-app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(session({ secret: 'keyboard cat', resave: false, saveUninitialized: false }));
 
-app.use(passport.initialize());
-app.use(passport.session());
-
-
-
-app.get('/', function(request, response) {
-  response.render('pages/index');
+app.listen(app.get('port'), function() {
+  console.log('Node app is running on port', app.get('port'));
 });
 
-app.get('/contact', require('connect-ensure-login').ensureLoggedIn(), function(request, response){
+var apiRoutes = express.Router();
+
+apiRoutes.post('/authenticate', function(req, res){
+	contact.findByUsername(req.body.username, function(user){
+		if(!user){
+			res.json({
+				success : false,
+				message : 'Authentication failed. User not found'
+			});
+		}else if(user){
+			if(user.password__c != req.body.password){
+				res.json({
+					success : false,
+					message : 'Authentication failed. Wrong Pasword.'
+				});
+			}else{
+				var token = jwt.sign(user, 'd00rb3ll_secret', {
+					expiresInMinutes : 1440 //24 hours
+				});
+				res.json({
+					success : true,
+					message : 'Enjoy your token',
+					token : token
+				});
+			}
+		}
+	});
+});
+
+// route middleware to verify a token
+apiRoutes.use(function(req, res, next) {
+
+  // check header or url parameters or post parameters for token
+  var token = req.body.token || req.query.token || req.headers['x-access-token'];
+
+  // decode token
+  if (token) {
+
+    // verifies secret and checks exp
+    jwt.verify(token, 'd00rb3ll_secret', function(err, decoded) {      
+      if (err) {
+        return res.json({ success: false, message: 'Failed to authenticate token.' });    
+      } else {
+        // if everything is good, save to request for use in other routes
+        req.decoded = decoded;    
+        next();
+      }
+    });
+
+  } else {
+
+    // if there is no token
+    // return an error
+    return res.status(403).send({ 
+        success: false, 
+        message: 'No token provided.' 
+    });
+    
+  }
+});
+
+apiRoutes.get('/contacts', function(request, response){
 	contact.getAllContacts(function(res){
 		response.send(res);
 	}, function(err){
 		response.send(err);
 	});
 })
-app.get('/login',
-  function(req, res){
-    res.send(401,{ success : false, message : 'authentication failed' });
-  });
 
-app.post('/login',
-  passport.authenticate('local', { failureRedirect: '/' }),
-  function(req, res) {
-    res.redirect('/contact');
- });
 
-app.post('/noauth', function(req, res){
-	contact.findByUsername(req.body.username, function(user, err){
-		res.send(user);
-	})
-})
+app.use('/api', apiRoutes);
 
-app.listen(app.get('port'), function() {
-  console.log('Node app is running on port', app.get('port'));
-});
+
+
+
+
+
+
 
 
