@@ -5,7 +5,7 @@ var Knex 			= require('knex');
 var cookieParser 	= require('cookie-parser');
 var bodyParser 		= require('body-parser');
 var session 		= require('express-session');
-
+var cors 			= require('cors')
 
 
 
@@ -19,12 +19,20 @@ var knex = Knex({
         password: "O2noM3Or0S8fkdi_FRNUS7hVHx",
         database: "de7d0ct6hrofib",
         ssl: true
-    }
+    },
+    debug : true
 });
 
-//Load local access objects
-var contact = require("./server/contact")(knex);
+var bookshelf = require('bookshelf')(knex);
 
+//Load local access objects
+/*
+var models = {
+	contact : require("./models/contact")(knex),
+	order : require("./models/dorrbell_order")(bookshelf)
+}*/
+
+var models = require("./models/models.js")(bookshelf);
 
 //Main app
 var app = express();
@@ -33,39 +41,49 @@ app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(express.static(__dirname + '/public'));
 
-app.use(bodyParser.urlencoded({ extended: true }));
 
-app.listen(app.get('port'), function() {
-  console.log('Node app is running on port', app.get('port'));
-});
+app.use(cors());
+
+app.use(bodyParser.json());
+
+
 
 var apiRoutes = express.Router();
 
 apiRoutes.post('/authenticate', function(req, res){
-	contact.findByUsername(req.body.username, function(user){
-		if(!user){
-			res.json({
-				success : false,
-				message : 'Authentication failed. User not found'
-			});
-		}else if(user){
-			if(user.password__c != req.body.password){
-				res.json({
-					success : false,
-					message : 'Authentication failed. Wrong Pasword.'
-				});
-			}else{
-				var token = jwt.sign(user, 'd00rb3ll_secret', {
-					expiresInMinutes : 1440 //24 hours
-				});
-				res.json({
-					success : true,
-					message : 'Enjoy your token',
-					token : token
-				});
-			}
-		}
-	});
+
+  models.Contact.where('email', req.body.username).fetch().then(function(user){
+    console.log(user);
+    if(!user){
+      res.status(401);
+      res.json({
+        success : false,
+        message : 'Authentication failed. User not found'
+      });
+    }else if(user){
+      if(user.get("password__c") != req.body.password){
+        res.status(401);
+        res.json({
+          success : false,
+          message : 'Authentication failed. Wrong Pasword.'
+        });
+      }else{
+        var token = jwt.sign(user, 'd00rb3ll_secret', {
+            expiresInMinutes : 1440 //24 hours
+          });
+        res.json({
+          success : true,
+          message : 'Enjoy your token',
+          token : token
+        });
+      }
+    }
+  }, function(err){
+    res.json({
+      success : false,
+      message : err
+    });
+  });
 });
 
 // route middleware to verify a token
@@ -100,19 +118,14 @@ apiRoutes.use(function(req, res, next) {
   }
 });
 
-apiRoutes.get('/contacts', function(request, response){
-	contact.getAllContacts(function(res){
-		response.send(res);
-	}, function(err){
-		response.send(err);
-	});
-})
-
+require('./routes/authenticated')(apiRoutes, models);
 
 app.use('/api', apiRoutes);
 
 
-
+app.listen(app.get('port'), function() {
+  console.log('Node app is running on port', app.get('port'));
+});
 
 
 
