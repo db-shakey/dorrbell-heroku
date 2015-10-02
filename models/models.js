@@ -12,7 +12,7 @@ module.exports = function(bookshelf){
 			return this.belongsTo(model.Contact);
 		},
 		recordtype : function(){
-			return this.belongsTo(model.RecordType);
+			return this.belongsTo(model.RecordType, "recordtypeid");
 		}
 	});
 
@@ -20,7 +20,7 @@ module.exports = function(bookshelf){
 		tableName : 'recordtype',
 		idAttribute : 'sfid',
 		orders : function(){
-			return this.hasMany(model.Order, "recordtypeid");
+			return this.hasMany(model.Order, "recordtypeid", "sfid");
 		}
 	})
 
