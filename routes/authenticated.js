@@ -41,6 +41,8 @@ module.exports = function(apiRoutes, conn){
 			}
 			response.status(200).send("Ok");
 		})
-	})
+	});
+
+	
 
 }

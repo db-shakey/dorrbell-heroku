@@ -26,6 +26,10 @@ conn.login('shakey@dorrbell.com', 'Seketha2sVlB3TJ2VP30V8Y3AF2eL7YgW', function(
   if(err){return console.error(err);}
 });
 
+apiRoutes.post('/error', function(req, res){
+  console.error(req.body);
+})
+
 apiRoutes.post('/authenticate', function(req, res){
   conn.query("SELECT Id, Password__c, Email FROM Contact WHERE Email = '" + req.body.username + "'", function(err, data){
     var user = data.records[0];
