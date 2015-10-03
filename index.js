@@ -27,7 +27,9 @@ conn.login('shakey@dorrbell.com', 'Seketha2sVlB3TJ2VP30V8Y3AF2eL7YgW', function(
 });
 
 apiRoutes.post('/error', function(req, res){
-  console.error(req.body);
+  conn.sobject('Mobile_Error__c').create([
+    request.body
+  ]);
 })
 
 apiRoutes.post('/authenticate', function(req, res){
