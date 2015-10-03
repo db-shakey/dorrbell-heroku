@@ -1,38 +1,13 @@
-var express 		= require('express');
-var jwt    			= require('jsonwebtoken');
-var fs 				= require('fs');
-var Knex 			= require('knex');
+var express 		  = require('express');
+var jwt    			  = require('jsonwebtoken');
+var fs 				    = require('fs');
+var Knex 			    = require('knex');
 var cookieParser 	= require('cookie-parser');
 var bodyParser 		= require('body-parser');
-var session 		= require('express-session');
-var cors 			= require('cors')
+var session 		  = require('express-session');
+var cors 			    = require('cors')
+var jsforce       = require('jsforce');
 
-
-
-//Setup Dabase Pool
-var knex = Knex({
-    client: 'pg',
-    connection: {
-        host: "ec2-50-16-238-141.compute-1.amazonaws.com",
-        port: 5432,
-        user: "sevthuwntxfnpz",
-        password: "O2noM3Or0S8fkdi_FRNUS7hVHx",
-        database: "de7d0ct6hrofib",
-        ssl: true
-    },
-    debug : true
-});
-
-var bookshelf = require('bookshelf')(knex);
-
-//Load local access objects
-/*
-var models = {
-	contact : require("./models/contact")(knex),
-	order : require("./models/dorrbell_order")(bookshelf)
-}*/
-
-var models = require("./models/models.js")(bookshelf);
 
 //Main app
 var app = express();
@@ -41,36 +16,35 @@ app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(express.static(__dirname + '/public'));
 
-
 app.use(cors());
-
 app.use(bodyParser.json());
 
-
-
 var apiRoutes = express.Router();
+var conn = new jsforce.Connection();
+
+conn.login('shakey@dorrbell.com', 'Seketha2sVlB3TJ2VP30V8Y3AF2eL7YgW', function(err, res){
+  if(err){return console.error(err);}
+});
 
 apiRoutes.post('/authenticate', function(req, res){
+  conn.query("SELECT Id, Password__c, Email FROM Contact WHERE Email = '" + req.body.username + "'", function(err, data){
+    var user = data.records[0];
 
-  models.Contact.where('email', req.body.username).fetch().then(function(user){
-    console.log(user);
-    if(!user){
-      res.status(401);
-      res.json({
+    if(err || !user){
+      res.status(401).json({
         success : false,
         message : 'Authentication failed. User not found'
-      });
+      })
     }else if(user){
-      if(user.get("password__c") != req.body.password){
-        res.status(401);
-        res.json({
+      if(user.password__c != req.body.password){
+        res.status(401).json({
           success : false,
           message : 'Authentication failed. Wrong Pasword.'
-        });
+        })
       }else{
         var token = jwt.sign(user, 'd00rb3ll_secret', {
-            expiresInMinutes : 1440 //24 hours
-          });
+          expiresInMinutes : 1440 //24 hours
+        });
         res.json({
           success : true,
           message : 'Enjoy your token',
@@ -78,11 +52,6 @@ apiRoutes.post('/authenticate', function(req, res){
         });
       }
     }
-  }, function(err){
-    res.json({
-      success : false,
-      message : err
-    });
   });
 });
 
@@ -118,7 +87,7 @@ apiRoutes.use(function(req, res, next) {
   }
 });
 
-require('./routes/authenticated')(apiRoutes, models);
+require('./routes/authenticated')(apiRoutes, conn);
 
 app.use('/api', apiRoutes);
 

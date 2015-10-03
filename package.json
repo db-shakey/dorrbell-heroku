@@ -19,7 +19,7 @@
     "bcrypt-nodejs" : "latest",
     "vary" : "*",
     "cors" : "*",
-    "bookshelf" : "*"
+    "jsforce" : "*"
   },
   "engines": {
     "node": "0.12.7"
