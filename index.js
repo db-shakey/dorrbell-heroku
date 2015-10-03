@@ -28,7 +28,7 @@ conn.login('shakey@dorrbell.com', 'Seketha2sVlB3TJ2VP30V8Y3AF2eL7YgW', function(
 
 apiRoutes.post('/error', function(req, res){
   conn.sobject('Mobile_Error__c').create([
-    request.body
+    req.body
   ]);
 })
 
