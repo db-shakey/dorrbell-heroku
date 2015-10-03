@@ -27,17 +27,14 @@ conn.login('shakey@dorrbell.com', 'Seketha2sVlB3TJ2VP30V8Y3AF2eL7YgW', function(
 });
 
 apiRoutes.post('/error', function(req, res){
-  console.log(req);
   conn.sobject('Mobile_Error__c').create([
     req.body
   ], function(err, rets){
     if (err) { 
-      console.log(err);
       res.status(401).send(err); 
     }
     for (var i=0; i < rets.length; i++) {
       if (!rets[i].success) {
-        console.log(rets[i]);
         res.status(401).send("Fail");
       }
     }
