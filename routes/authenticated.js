@@ -1,7 +1,7 @@
 module.exports = function(apiRoutes, conn){
 
 	var onError = function(err, response){
-		response.status(403);
+		response.status(400);
 		response.send(err);
 	}
 
@@ -43,6 +43,6 @@ module.exports = function(apiRoutes, conn){
 		})
 	});
 
-	
+
 
 }

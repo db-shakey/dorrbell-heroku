@@ -14,9 +14,7 @@ var https         = require('https');
 var app = express();
 
 app.set('port', (process.env.PORT || 5000));
-app.set('views', __dirname + '/views');
-app.set('view engine', 'ejs');
-app.use(express.static(__dirname + '/public'));
+
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -28,50 +26,9 @@ conn.login('shakey@dorrbell.com', 'Seketha2sVlB3TJ2VP30V8Y3AF2eL7YgW', function(
   if(err){return console.error(err);}
 });
 
-apiRoutes.post('/error', function(req, res){
-  conn.sobject('Mobile_Error__c').create([
-    req.body
-  ], function(err, rets){
-    if (err) { 
-      res.status(401).send(err); 
-    }
-    for (var i=0; i < rets.length; i++) {
-      if (!rets[i].success) {
-        res.status(401).send("Fail");
-      }
-    }
-    res.status(200).send("Ok");
-  });
-})
 
-apiRoutes.post('/authenticate', function(req, res){
-  conn.query("SELECT Id, Password__c, Email FROM Contact WHERE Email = '" + req.body.username + "'", function(err, data){
-    var user = data.records[0];
-
-    if(err || !user){
-      res.status(401).json({
-        success : false,
-        message : 'Authentication failed. User not found'
-      })
-    }else if(user){
-      if(user.password__c != req.body.password){
-        res.status(401).json({
-          success : false,
-          message : 'Authentication failed. Wrong Pasword.'
-        })
-      }else{
-        var token = jwt.sign(user, 'd00rb3ll_secret', {
-          expiresInMinutes : 1440 //24 hours
-        });
-        res.json({
-          success : true,
-          message : 'Enjoy your token',
-          token : token
-        });
-      }
-    }
-  });
-});
+var utils = require('./utils/app-utils')(crypto, jwt);
+require('./routes/unauthenticated')(apiRoutes, conn, utils);
 
 // route middleware to verify a token
 apiRoutes.use(function(req, res, next) {
