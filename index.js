@@ -7,10 +7,12 @@ var bodyParser 		= require('body-parser');
 var session 		  = require('express-session');
 var cors 			    = require('cors')
 var jsforce       = require('jsforce');
-
-
+var crypto        = require('crypto');
+var http          = require('http');
+var https         = require('https');
 //Main app
 var app = express();
+
 app.set('port', (process.env.PORT || 5000));
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
@@ -107,10 +109,20 @@ require('./routes/authenticated')(apiRoutes, conn);
 
 app.use('/api', apiRoutes);
 
-
-app.listen(app.get('port'), function() {
-  console.log('Node app is running on port', app.get('port'));
+http.createServer(app).listen(app.get('port'), function(){
+  console.log("Dorrbell standard listening on port " + app.get('port'));
 });
+
+https.createServer({
+  key : fs.readFileSync('./certs/mykey.pem'),
+  cert : fs.readFileSync('./certs/mycert.pem'),
+  ca : fs.readFileSync('./certs/ca.key'),
+  requestCert : false,
+  rejectUnauthorized : false
+}, app).listen(8443, function(){
+  console.log("Dorrbell secure listening on port 443");
+});
+
 
 
 
