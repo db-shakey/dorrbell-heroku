@@ -1,21 +1,6 @@
 module.exports = function(apiRoutes, conn, utils){
 
-	apiRoutes.post('/error', function(req, res){
-	  console.error(req.body);
-	  conn.sobject('Mobile_Error__c').create([
-	    req.body
-	  ], function(err, rets){
-	    if (err) { 
-	      res.status(401).send(err); 
-	    }
-	    for (var i=0; i < rets.length; i++) {
-	      if (!rets[i].success) {
-	        res.status(401).send("Fail");
-	      }
-	    }
-	    res.status(200).send("Ok");
-	  });
-	});
+	
 
 	apiRoutes.post('/authenticate', function(req, res){
 	  conn.query("SELECT Id, Password__c, Email, Name FROM Contact WHERE Email = '" + req.body.username + "'", function(err, data){

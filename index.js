@@ -29,6 +29,22 @@ conn.login('shakey@dorrbell.com', 'Seketha2sVlB3TJ2VP30V8Y3AF2eL7YgW', function(
 
 var utils = require('./utils/app-utils')(crypto, jwt);
 
+apiRoutes.post('/error', function(req, res){
+  console.error(req.body);
+  conn.sobject('Mobile_Error__c').create([
+    req.body
+  ], function(err, rets){
+    if (err) { 
+      res.status(401).send(err); 
+    }
+    for (var i=0; i < rets.length; i++) {
+      if (!rets[i].success) {
+        res.status(401).send("Fail");
+      }
+    }
+    res.status(200).send("Ok");
+  });
+});
 
 //authenticate requests
 apiRoutes.use(function(req, res, next){
