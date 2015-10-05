@@ -1,6 +1,7 @@
 module.exports = function(apiRoutes, conn, utils){
 
 	apiRoutes.post('/error', function(req, res){
+	  console.error(req.body);
 	  conn.sobject('Mobile_Error__c').create([
 	    req.body
 	  ], function(err, rets){
