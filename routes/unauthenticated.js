@@ -17,7 +17,7 @@ module.exports = function(apiRoutes, conn, utils){
 	});
 
 	apiRoutes.post('/authenticate', function(req, res){
-	  conn.query("SELECT Id, Password__c, Email FROM Contact WHERE Email = '" + req.body.username + "'", function(err, data){
+	  conn.query("SELECT Id, Password__c, Email, Name FROM Contact WHERE Email = '" + req.body.username + "'", function(err, data){
 	    var user = data.records[0];
 
 	    if(err || !user){

@@ -28,6 +28,20 @@ conn.login('shakey@dorrbell.com', 'Seketha2sVlB3TJ2VP30V8Y3AF2eL7YgW', function(
 
 
 var utils = require('./utils/app-utils')(crypto, jwt);
+
+
+//authenticate requests
+apiRoutes.use(function(req, res, next){
+  if(utils.checkToken(req))
+    next();
+  else{
+    return res.status(403).send({
+      success : false,
+      message : 'Unauthorized Application'
+    });
+  }
+})
+
 require('./routes/unauthenticated')(apiRoutes, conn, utils);
 
 // route middleware to verify a token
@@ -40,7 +54,7 @@ apiRoutes.use(function(req, res, next) {
   if (token) {
 
     // verifies secret and checks exp
-    jwt.verify(token, 'd00rb3ll_secret', function(err, decoded) {      
+    jwt.verify(token, utils.getPassword(), function(err, decoded) {      
       if (err) {
         return res.json({ success: false, message: 'Failed to authenticate token.' });    
       } else {

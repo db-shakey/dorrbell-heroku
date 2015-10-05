@@ -43,6 +43,8 @@ module.exports = function(apiRoutes, conn){
 		})
 	});
 
-
+	apiRoutes.get("/me", function(request, response){
+		response.send(request.decoded);
+	});
 
 }

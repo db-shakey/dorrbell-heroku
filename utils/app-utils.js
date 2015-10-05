@@ -2,6 +2,7 @@ module.exports = function(crypto, jwt){
 
 	var password = 'd00rb3ll_secret';
 	var algorithm = 'aes-256-ctr';
+	var token = 'Basic am9zaHVhQGRvcnJiZWxsLmNvbTpkMDByYjMxMV9hcHBsaWNhdGlvbg==';
 
 	return {
 		validateContact : function(contact){
@@ -20,6 +21,10 @@ module.exports = function(crypto, jwt){
 			}
 			return false;
 		},
+		checkToken : function(req){
+			console.log(req.headers);
+			return req.headers['authorization'] == token;
+		},
 		encryptText : function(text){
 			var cipher = crypto.createCipher(algorithm,password)
 		    var crypted = cipher.update(text,'utf8','hex')
@@ -36,6 +41,9 @@ module.exports = function(crypto, jwt){
 			return jwt.sign(user, password, {
       			expiresInMinutes : 1440 //24 hours
     		});
+		},
+		getPassword : function(){
+			return password;
 		}
 	}
 
