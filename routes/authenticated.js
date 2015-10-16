@@ -7,6 +7,8 @@ module.exports = function(apiRoutes, conn){
 
 	var globalDescribe;
 	var updated = {};
+	var socketConnection;
+
 	apiRoutes.post('/hasUpdated', function(request, response){
 		var dirty = new Array();
 		for(var key in updated){
@@ -46,6 +48,7 @@ module.exports = function(apiRoutes, conn){
 	});
 
 	apiRoutes.post('/update/:sObject', function(request, response){
+		/*
 		var checkUpdate = function(describe, idArray){
 			var objMap = {};
 			for (var i = 0; i< idArray.length; i++){
@@ -72,7 +75,7 @@ module.exports = function(apiRoutes, conn){
 			    });
 			  }
 			}
-		}
+		}*/
 
 		
 
@@ -85,6 +88,7 @@ module.exports = function(apiRoutes, conn){
 			      	onError(err, response);
 			    }
 			}
+			/*
 			if(!globalDescribe){
 				conn.describeGlobal(function(err, res){
 					if(err)
@@ -96,6 +100,9 @@ module.exports = function(apiRoutes, conn){
 				})
 			}else
 				checkUpdate(globalDescribe, rets);
+			*/
+			if(socketConnection)
+				socketConnection.send(JSON.stringify(rets));
 			response.status(200).send("Ok");
 		})
 	});
@@ -103,5 +110,11 @@ module.exports = function(apiRoutes, conn){
 	apiRoutes.get("/me", function(request, response){
 		response.send(request.decoded);
 	});
+
+	return {
+		setConnection : function(conn){
+			socketConnection = conn;
+		}
+	}
 
 }

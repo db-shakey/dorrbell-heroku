@@ -10,6 +10,7 @@ var jsforce       = require('jsforce');
 var crypto        = require('crypto');
 var http          = require('http');
 var https         = require('https');
+
 //Main app
 var app = express();
 
@@ -21,13 +22,17 @@ app.use(bodyParser.json());
 
 var apiRoutes = express.Router();
 var conn = new jsforce.Connection();
+var socketServer;
 
 conn.login('shakey@dorrbell.com', 'Seketha2sVlB3TJ2VP30V8Y3AF2eL7YgW', function(err, res){
   if(err){return console.error(err);}
 });
 
 
+
 var utils = require('./utils/app-utils')(crypto, jwt);
+
+
 
 apiRoutes.post('/error', function(req, res){
   conn.sobject('Mobile_Error__c').create([
@@ -91,13 +96,22 @@ apiRoutes.use(function(req, res, next) {
   }
 });
 
-require('./routes/authenticated')(apiRoutes, conn);
+var authPath = require('./routes/authenticated')(apiRoutes, conn);
 
 app.use('/api', apiRoutes);
 
-http.createServer(app).listen(app.get('port'), function(){
+var httpServer = http.createServer(app).listen(app.get('port'), function(){
   console.log("Dorrbell standard listening on port " + app.get('port'));
 });
+
+var ws = require('websocket').server;
+var socket = new ws({
+  httpServer : httpServer
+});
+socket.on("request", function(request){
+  var connection = request.accept(null, request.origin);
+  authPath.setConnection(connection);
+})
 
 https.createServer({
   key : fs.readFileSync('./certs/mykey.pem'),
