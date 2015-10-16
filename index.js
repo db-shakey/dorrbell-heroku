@@ -5,7 +5,7 @@ var Knex 			    = require('knex');
 var cookieParser 	= require('cookie-parser');
 var bodyParser 		= require('body-parser');
 var session 		  = require('express-session');
-var cors 			    = require('cors')
+var cors 			    = require('cors');
 var jsforce       = require('jsforce');
 var crypto        = require('crypto');
 var http          = require('http');
@@ -30,7 +30,6 @@ conn.login('shakey@dorrbell.com', 'Seketha2sVlB3TJ2VP30V8Y3AF2eL7YgW', function(
 var utils = require('./utils/app-utils')(crypto, jwt);
 
 apiRoutes.post('/error', function(req, res){
-  console.error(req.body);
   conn.sobject('Mobile_Error__c').create([
     req.body
   ], function(err, rets){
