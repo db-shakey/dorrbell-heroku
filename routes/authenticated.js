@@ -8,6 +8,7 @@ module.exports = function(apiRoutes, conn){
 	var globalDescribe;
 	var updated = {};
 	var socketConnection = new Array();
+	var server;
 
 	apiRoutes.post('/hasUpdated', function(request, response){
 		var dirty = new Array();
@@ -29,7 +30,6 @@ module.exports = function(apiRoutes, conn){
 
 	apiRoutes.post('/query', function(request, response){
 		var query = request.body.query.replace(new RegExp('SELECT ', 'g'), 'SELECT LastModifiedDate, ');
-		console.log(query);
 		conn.query(query, function(err, data){
 			if(err)
 				onError(err, response);
@@ -102,10 +102,11 @@ module.exports = function(apiRoutes, conn){
 				checkUpdate(globalDescribe, rets);
 			*/
 			var retsJSON = JSON.stringify(rets);
-			for (var i=0; i < socketConnection.length; i++) {
-                socketConnection[i].sendUTF(retsJSON);
-            }
-            
+			if(server)
+				server.clients.forEach(function each(client){
+					client.send(retsJSON);
+				})
+
 			response.status(200).send("Ok");
 		})
 	});
@@ -119,9 +120,13 @@ module.exports = function(apiRoutes, conn){
 			var index = socketConnection.push(conn) - 1;
 			conn.on('close', function(closed){
 				console.log((new Date()) + " Peer "
-                + closed.remoteAddress + " disconnected.");
+                + closed + " disconnected.");
 				socketConnection.splice(index, 1);
 			});
+		},
+
+		setServer : function(s){
+			server = s;
 		}
 	}
 

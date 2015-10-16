@@ -22,7 +22,6 @@ module.exports = function(crypto, jwt){
 			return false;
 		},
 		checkToken : function(req){
-			console.log(req.headers);
 			return req.headers['authorization'] == token;
 		},
 		encryptText : function(text){
