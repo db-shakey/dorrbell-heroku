@@ -110,8 +110,9 @@ var socket = new ws({
 });
 socket.on("request", function(request){
   var connection = request.accept(null, request.origin);
-  authPath.setConnection(connection);
-})
+  authPath.addConnection(connection);
+});
+
 
 https.createServer({
   key : fs.readFileSync('./certs/mykey.pem'),

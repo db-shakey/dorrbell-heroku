@@ -7,7 +7,7 @@ module.exports = function(apiRoutes, conn){
 
 	var globalDescribe;
 	var updated = {};
-	var socketConnection;
+	var socketConnection = new Array();
 
 	apiRoutes.post('/hasUpdated', function(request, response){
 		var dirty = new Array();
@@ -101,8 +101,11 @@ module.exports = function(apiRoutes, conn){
 			}else
 				checkUpdate(globalDescribe, rets);
 			*/
-			if(socketConnection)
-				socketConnection.send(JSON.stringify(rets));
+			var retsJSON = JSON.stringify(rets);
+			for (var i=0; i < socketConnection.length; i++) {
+                socketConnection[i].sendUTF(retsJSON);
+            }
+            
 			response.status(200).send("Ok");
 		})
 	});
@@ -112,8 +115,13 @@ module.exports = function(apiRoutes, conn){
 	});
 
 	return {
-		setConnection : function(conn){
-			socketConnection = conn;
+		addConnection : function(conn){
+			var index = socketConnection.push(conn) - 1;
+			conn.on('close', function(closed){
+				console.log((new Date()) + " Peer "
+                + closed.remoteAddress + " disconnected.");
+				socketConnection.splice(index, 1);
+			});
 		}
 	}
 
