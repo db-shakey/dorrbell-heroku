@@ -104,12 +104,13 @@ var httpServer = http.createServer(app).listen(app.get('port'), function(){
   console.log("Dorrbell standard listening on port " + app.get('port'));
 });
 
-var ws = require('ws').Server;
-var socketServer = new ws({
-  server : httpServer
-});
+var io = require('socket.io')(httpServer);
+io.on("connection", function(socket){
+  socket.on("update", function(data){
+    socket.broadcast.emit("update", data);
+  })
+})
 
-authPath.setServer(socketServer);
 
 
 https.createServer({
