@@ -104,7 +104,10 @@ var httpServer = http.createServer(app).listen(app.get('port'), function(){
   console.log("Dorrbell standard listening on port " + app.get('port'));
 });
 
-var io = require('socket.io')(httpServer);
+var io = require('socket.io')(httpServer, {
+  transports : ["xhr-polling"],
+  "polling duration": 10
+});
 io.on("connection", function(socket){
   socket.on("update", function(data){
     socket.broadcast.emit("update", data);
