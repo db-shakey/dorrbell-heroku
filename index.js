@@ -100,20 +100,21 @@ var authPath = require('./routes/authenticated')(apiRoutes, conn);
 
 app.use('/api', apiRoutes);
 
-var httpServer = http.createServer(app).listen(app.get('port'), function(){
-  console.log("Dorrbell standard listening on port " + app.get('port'));
-});
 
-var io = require('socket.io')(httpServer, {
-  transports : ["xhr-polling"],
-  "polling duration": 10
-});
-io.on("connection", function(socket){
+var server = http.createServer(app);
+
+
+var io = require('socket.io').listen(server);
+
+io.sockets.on("connection", function(socket){
   socket.on("update", function(data){
     socket.broadcast.emit("update", data);
   })
 })
 
+server.listen(app.get('port'), function(){
+  console.log("Dorrbell standard listening on port " + app.get('port'));
+});
 
 
 https.createServer({
