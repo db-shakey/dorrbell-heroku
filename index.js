@@ -23,7 +23,7 @@ var apiRoutes = express.Router();
 var conn = new jsforce.Connection();
 var socketServer;
 
-conn.login('shakey@dorrbell.com', 'Seketha2sVlB3TJ2VP30V8Y3AF2eL7YgW', function(err, res){
+conn.login('shakey@dorrbell.com', 'Seketha2Us9W6kJ7PNo9hlpGf1QZGFYj', function(err, res){
   if(err){return console.error(err);}
 });
 
