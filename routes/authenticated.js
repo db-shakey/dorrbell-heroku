@@ -48,34 +48,6 @@ module.exports = function(apiRoutes, conn){
 	});
 
 	apiRoutes.post('/update/:sObject', function(request, response){
-		/*
-		var checkUpdate = function(describe, idArray){
-			var objMap = {};
-			for (var i = 0; i< idArray.length; i++){
-				var key = idArray[i];
-				if(key.id.length > 3){
-					var sobject = describe.sobjects.filter(function(value){
-						return (key.id.substring(0, 3) == value.keyPrefix);
-					})[0].name;
-					if(sobject && !objMap[sobject]){
-						objMap[sobject] = "('" + key.id + "'";
-					}else if(sobject){
-						objMap[sobject] += (", '" + key.id + "'");
-					}
-				}
-			}
-			var executed = 0;
-			for (var key in objMap) {
-			  if (objMap.hasOwnProperty(key)) {
-			    conn.query("SELECT Id, LastModifiedDate FROM " + key + " WHERE Id IN " + objMap[key] + ")", function(err, data){
-		    		for(var d = 0; d < data.records.length; d++){
-		    			var record = data.records[d];
-		    			updated[record.Id] = record.LastModifiedDate;
-		    		}
-			    });
-			  }
-			}
-		}*/
 
 		
 
@@ -88,19 +60,6 @@ module.exports = function(apiRoutes, conn){
 			      	onError(err, response);
 			    }
 			}
-			/*
-			if(!globalDescribe){
-				conn.describeGlobal(function(err, res){
-					if(err)
-						onError(err, response)
-					else{
-						globalDescribe = res;
-						checkUpdate(globalDescribe, rets);
-					}
-				})
-			}else
-				checkUpdate(globalDescribe, rets);
-			*/
 			var retsJSON = JSON.stringify(rets);
 			if(server)
 				server.clients.forEach(function each(client){
