@@ -10,7 +10,7 @@ module.exports = function(apiRoutes, conn){
 		response.send(err);
 	}
 
-	var querySearchResults = function(query, response){
+	var querySearchResults = function(query, limit, offset, geo, response){
 		conn.search(query, function(err, data){
 			if(err)
 				onError(err, response);
@@ -38,7 +38,10 @@ module.exports = function(apiRoutes, conn){
 				else
 					response.status(204).send();
 
+
+
 				if(where){
+					console.log(where);
 					conn.query("SELECT Id, \
 									Variant_SKU__c, \
 									Name, \
@@ -51,14 +54,14 @@ module.exports = function(apiRoutes, conn){
 									Dorrbell_Product__r.Name, \
 									Compare_At_Price__c \
 								FROM Variant__c \
-							WHERE " + where, function(err, queryData){
+							WHERE " + where + " " +
+							geo +
+							" LIMIT " + limit + " OFFSET " + offset, function(err, queryData){
 						if(err)
 							onError(err, response);
 						response.json(queryData);			
 					});
 				}
-
-				
 			}
 		});
 	}
@@ -91,17 +94,21 @@ module.exports = function(apiRoutes, conn){
 		});
 	});
 
-	apiRoutes.get('/searchAllItems/:searchString/:latitude/:longitude', function(request, response){
+	apiRoutes.get('/searchAllItems/:searchString/:latitude/:longitude/:limit/:offset', function(request, response){
 		var text = request.params.searchString;
+		var limit = request.params.limit;
+		var offset = request.params.offset;
 		var geo = "GEOLOCATION(" + request.params.latitude + "," + request.params.longitude + ")";
-		querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id ORDER BY DISTANCE(Dorrbell_Product__r.Store__r.Coordinates__c, " + geo + ", 'mi')), Dorrbell_Product__c(Id ORDER BY DISTANCE(Store__r.Coordinates__c, " + geo + ", 'mi'))", response);
+		var order = "ORDER BY DISTANCE(Dorrbell_Product__r.Store__r.Coordinates__c, " + geo + ", 'mi')";
+		querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id), Dorrbell_Product__c(Id)", limit, offset, order, response);
 		
 	});
-	apiRoutes.get('/searchStoreItems/:store/:searchString', function(request, response){
+	apiRoutes.get('/searchStoreItems/:store/:searchString/:limit/:offset', function(request, response){
 		var store = request.params.store;
 		var text = request.params.searchString;
-		console.log(request);
-		querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id WHERE Store_Id__c = '" + store + "'), Dorrbell_Product__c(Id)", response);
+		var limit = request.params.limit;
+		var offset = request.params.offset;
+		querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id WHERE Store_Id__c = '" + store + "'), Dorrbell_Product__c(Id)", limit, offset, null, response);
 
 	})
 
