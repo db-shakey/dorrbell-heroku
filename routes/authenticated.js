@@ -146,6 +146,7 @@ module.exports = function(apiRoutes, conn){
 	apiRoutes.post('/createDeliveryItem', function(request, response){
 		var deliveryId = request.body.deliveryId;
 		var variantId = request.body.variantId;
+		var contactId = request.body.contactId;
 
 		conn.query("SELECT Id, \
 							Barcode__c, \
@@ -175,7 +176,8 @@ module.exports = function(apiRoutes, conn){
 					"Related_Store__c" : variant.Store_Id__c,
 					"Related_Variant__c" : variant.Id,
 					"Sku__c" : variant.Variant_SKU__c,
-					"Related_Delivery__c" : deliveryId
+					"Related_Delivery__c" : deliveryId,
+					"Item_Added_By__c" : contactId
 				}, function(error2, ret){
 					if(error2 || !ret.success){
 						onError(error2, response);
