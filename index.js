@@ -101,12 +101,12 @@ app.use('/api', apiRoutes);
 
 
 var server = http.createServer(app);
-
-
 var io = require('socket.io').listen(server);
 
 io.sockets.on("connection", function(socket){
   socket.on("update", function(data){
+    console.log("broadcasting");
+    console.log(data);
     socket.broadcast.emit("update", data);
   })
 })

@@ -7,6 +7,7 @@ module.exports = function(apiRoutes, conn){
 
 	var onError = function(err, response){
 		response.status(400);
+		console.log(err);
 		response.send(err);
 	}
 
@@ -66,6 +67,198 @@ module.exports = function(apiRoutes, conn){
 		});
 	}
 
+	var setOrderStatus = function(orderId, orderStatus, deliveryStatus, itemStatus, orderRecordTypeId, deliveryRecordTypeId, itemRecordTypeId, response){
+
+		var orderStatus = new Promise(function(resolve, reject){
+			var data = {
+				Id : orderId,
+				Status__c : orderStatus
+			};
+			if(orderRecordTypeId)
+				data.RecordTypeId = orderRecordTypeId;
+
+			conn.sobject("Dorrbell_Order__c").update(data, function(error, result){
+				if(error)
+					reject(error);
+				else
+					resolve(result);
+			});
+		});
+
+		var setDeliveryStatus = new Promise(function(deliveryResolve, deliveryReject){
+			var getDeliveries = new Promise(function(resolve, reject){
+				conn.query("SELECT Id FROM Delivery__c WHERE Dorrbell_Order__c = '" + orderId + "'", function(error, result){
+					if(error || !result.records)
+						reject(error);
+					else
+						resolve(result);
+				});
+			});
+
+			getDeliveries.then(function(data){
+				console.log("Setting delivery status");
+				var idArray = new Array();
+				for(var i =0; i<data.records.length; i++){
+					var record = {
+						"Id" : data.records[i].Id
+						, "Status__c" : deliveryStatus
+					};
+					if(deliveryRecordTypeId)
+						record.RecordTypeId = deliveryRecordTypeId;
+
+					idArray.push(record);
+				}
+				conn.sobject("Delivery__c").update(idArray, function(error, result){
+					if(error){
+						deliveryReject(error);
+					}
+					else
+						deliveryResolve(result);
+				})
+			}, deliveryReject);
+		})
+
+		var setItemStatus = new Promise(function(itemResolve, itemReject){
+			var getItems = new Promise(function(resolve, reject){
+				conn.query("SELECT Id FROM Delivery_Item__c WHERE Status__c = 'Checked Out' AND Related_Delivery__r.Dorrbell_Order__c = '" + orderId + "'", function(error, result){
+					if(error || !result.records)
+						reject(error);
+					else
+						resolve(result);
+				});
+			});
+
+			getItems.then(function(data){
+				console.log("Setting item status");
+				var itemIdArray = new Array();
+				for(var i = 0; i<data.records.length; i++){
+					var record = {
+						"Id" : data.records[i].Id
+						, "Status__c" : itemStatus
+					};
+					if(itemRecordTypeId)
+						record.RecordTypeId = itemRecordTypeId;
+
+					itemIdArray.push(record);
+				}
+				conn.sobject("Delivery_Item__c").update(itemIdArray, function(error, result){
+					if(error){
+						itemReject(error);
+					}
+					else
+						itemResolve(result);
+				})
+			}, itemReject);
+		});
+
+		var deffereds = new Array();
+		deffereds.push(orderStatus);
+		if(deliveryStatus)
+			deffereds.push(setDeliveryStatus);
+		if(itemStatus)
+			deffereds.push(setItemStatus);
+
+		Promise.all(deffereds).then(function(results){
+			response.status(200).send("Ok");
+		}, function(errors){
+			onError(errors, response);
+		});
+
+		/*
+		console.log("setting order status");
+		conn.sobject("Dorrbell_Order__c").update({
+			Id : orderId,
+			Status__c : orderStatus
+		}, function(error1, response1){
+			if(!error1 && response1.success){
+				if(deliveryStatus){
+					console.log("setting delivery status");
+					conn.query("SELECT Id FROM Delivery__c WHERE Dorrbell_Order__c = '" + orderId + "'", function(error2, response2){
+						if(!error2 && response2.records){
+							var idArray = new Array();
+							for(var i =0; i<response2.records.length; i++){
+								idArray.push({
+									"Id" : response2.records[i].Id
+									, "Status__c" : deliveryStatus
+								});
+							}
+							conn.sobject("Delivery__c").update(idArray, function(error3, response3){
+								if(error3)
+									onError(error3, response);
+								else if(itemStatus){
+									console.log("setting item status");
+									conn.query("SELECT Id FROM Delivery_Item__c WHERE Status__c = 'Checked Out' AND Related_Delivery__r.Dorrbell_Order__c = '" + orderId + "'", function(error4, response4){
+										if(!error4 && response4.records){
+											var itemIdArray = new Array();
+											for(var i = 0; i<response4.records.length; i++){
+												itemIdArray.push({
+													"Id" : response4.records[i].Id
+													, "Status__c" : itemStatus
+												});
+											}
+											conn.sobject("Delivery_Item__c").update(itemIdArray, function(error5, response5){
+												if(error5)
+													onError(error5, response);
+												else
+													response.status(200).send("Ok");
+											})
+										}else{
+											onError(error4, response);
+										}
+									})
+								}else{
+									response.status(200).send("Ok");
+								}
+							})
+						}else
+							onError(error2, response);
+					})
+				}else{
+					response.status(200).send("Ok");
+				}
+			}else{
+				onError(error1, response);
+			}
+		})*/
+	}
+
+	
+
+	apiRoutes.get('/ping', function(request, response){
+		response.send('valid_token');
+	});
+
+	apiRoutes.get('/searchAllItems/:searchString/:latitude/:longitude/:limit/:offset', function(request, response){
+		var text = request.params.searchString;
+		var limit = request.params.limit;
+		var offset = request.params.offset;
+		var geo = "GEOLOCATION(" + request.params.latitude + "," + request.params.longitude + ")";
+		var order = "ORDER BY DISTANCE(Dorrbell_Product__r.Store__r.Coordinates__c, " + geo + ", 'mi')";
+		querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id), Dorrbell_Product__c(Id)", limit, offset, order, response);
+	});
+
+	apiRoutes.get('/searchStoreItems/:store/:searchString/:limit/:offset', function(request, response){
+		var store = request.params.store;
+		var text = request.params.searchString;
+		var limit = request.params.limit;
+		var offset = request.params.offset;
+		var order = "ORDER BY Name DESC";
+		querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id WHERE Store_Id__c = '" + store + "'), Dorrbell_Product__c(Id)", limit, offset, order, response);
+	});
+
+	apiRoutes.get('/describe/:sObject', function(request, response){
+		conn.describe(request.params.sObject, function(err, meta){
+			if(err)
+				onError(err, response);
+
+			response.json(meta);
+		})
+	});
+
+	apiRoutes.get("/me", function(request, response){
+		response.send(request.decoded);
+	});
+
 	apiRoutes.post('/hasUpdated', function(request, response){
 		var dirty = new Array();
 		for(var key in updated){
@@ -78,10 +271,6 @@ module.exports = function(apiRoutes, conn){
 			}
 		}
 		response.send(dirty);
-	})
-
-	apiRoutes.get('/ping', function(request, response){
-		response.send('valid_token');
 	});
 
 	apiRoutes.post('/query', function(request, response){
@@ -94,33 +283,7 @@ module.exports = function(apiRoutes, conn){
 		});
 	});
 
-	apiRoutes.get('/searchAllItems/:searchString/:latitude/:longitude/:limit/:offset', function(request, response){
-		var text = request.params.searchString;
-		var limit = request.params.limit;
-		var offset = request.params.offset;
-		var geo = "GEOLOCATION(" + request.params.latitude + "," + request.params.longitude + ")";
-		var order = "ORDER BY DISTANCE(Dorrbell_Product__r.Store__r.Coordinates__c, " + geo + ", 'mi')";
-		querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id), Dorrbell_Product__c(Id)", limit, offset, order, response);
-		
-	});
-	apiRoutes.get('/searchStoreItems/:store/:searchString/:limit/:offset', function(request, response){
-		var store = request.params.store;
-		var text = request.params.searchString;
-		var limit = request.params.limit;
-		var offset = request.params.offset;
-		var order = "ORDER BY Name DESC";
-		querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id WHERE Store_Id__c = '" + store + "'), Dorrbell_Product__c(Id)", limit, offset, order, response);
-
-	})
-
-	apiRoutes.get('/describe/:sObject', function(request, response){
-		conn.describe(request.params.sObject, function(err, meta){
-			if(err)
-				onError(err, response);
-
-			response.json(meta);
-		})
-	});
+	
 
 	apiRoutes.post('/update/:sObject', function(request, response){
 		conn.sobject(request.params.sObject).update([
@@ -142,6 +305,123 @@ module.exports = function(apiRoutes, conn){
 		})
 	});
 
+	apiRoutes.post('/startDelivery', function(request, response){
+		setOrderStatus(request.body.orderId, "En Route to Customer", "En Route to Customer", null, null, null, null, response);
+	});
+
+	apiRoutes.post('/completeDelivery', function(request, response){
+		setOrderStatus(request.body.orderId, "Delivered To Customer", "With Customer", null, null, null, null, response);
+	});
+
+	apiRoutes.post("/returnItem", function(request, response){
+		conn.sobject("Delivery_Item__c").update([
+			{Id : request.body.Id, Status__c : "Returning"}
+		], function(err, rets){
+			if(err)
+				onError(err, repsonse);
+		})
+	});
+
+	apiRoutes.post("/startReturns", function(request, response){
+		conn.query("SELECT Id FROM Delivery__c WHERE Dorrbell_Order__c = '" + request.body.Id + "' AND Number_of_Returns__c > 0", function(queryError, data){
+			if(queryError)
+				onError(queryError, response);
+			else{
+				var deliveries = new Array();
+				for(var i in data.records){
+					deliveries.push({Id : data.records[i].Id, Status__c : "Return Started"});
+				}
+				conn.sobject("Delivery__c").update(deliveries, function(err2, rets2){
+					if(err2)
+						onError(err2, response);
+					else{
+						setOrderStatus(request.body.Id, "Retrieved From Customer", null, null, null, null, null, response);
+					}
+				})
+			}
+		})
+	});
+
+	apiRoutes.post("/completeOrder", function(request, response){
+		
+		var recordTypes = new Promise(function(resolve, reject){
+			conn.query("SELECT Id, sObjectType, DeveloperName FROM RecordType WHERE DeveloperName = 'Complete' AND (sObjectType = 'Dorrbell_Order__c' OR sObjectType = 'Delivery__c')", function(err, rets){
+				if(err){
+					reject(err);
+				}
+				else
+					resolve(rets);
+			});
+		})
+
+		var checkedOut = new Promise(function(resolve, reject){
+			conn.query("SELECT Id FROM Delivery_Item__c WHERE Status__c = 'Checked Out' OR Status__c = 'Returning'", function(err, rets){
+				if(err)
+					reject(err);
+				else
+					resolve(rets);
+			});
+		})
+
+		Promise.all([recordTypes, checkedOut]).then(function(results){
+			if(checkedOut.records && checkedOut.records.length > 0)
+				onError("Invalid Items", response);
+			else{
+				var orderRecordTypeId = null;
+				var deliveryRecordTypeId = null;
+				for(var i in results[0].records){
+					if(results[0].records[i].SobjectType == 'Dorrbell_Order__c' && results[0].records[i].DeveloperName == 'Complete')
+						orderRecordTypeId = results[0].records[i].Id;
+					else if(results[0].records[i].SobjectType == 'Delivery__c' && results[0].records[i].DeveloperName == 'Complete')
+						deliveryRecordTypeId = results[0].records[i].Id;
+				}
+				setOrderStatus(request.body.Id, "Successfully Completed", "Complete", "Purchased", orderRecordTypeId, deliveryRecordTypeId, null, response);
+			}
+		}, function(errors){
+			onError(errors, response);
+		});
+		/*
+		conn.query("SELECT Id FROM Delivery_Item__c WHERE Status__c = 'Checked Out' OR Status__c = 'Returning'", function(err, data){
+			if(err)
+				onError(err, response);
+			else if(data.records && data.records.length > 0)
+				onError("Invalid Items", response);
+			else
+				setOrderStatus(request.body.Id, "Successfully Completed", "Complete", "Purchased", response);
+		});*/
+
+	});
+
+	apiRoutes.post("/checkInItem", function(request, response){
+		conn.sobject("Delivery_Item__c").update([
+			{Id : request.body.Id, Status__c : "Checked In"}
+		], function(err, rets){
+			if(err)
+				onError(err, response);
+			else{
+				conn.query("SELECT Id FROM Delivery_Item__c WHERE Status__c = 'Returning' AND Related_Delivery__c = '" + request.body.Related_Delivery__c + "'", function(queryError, data){
+					if(queryError)
+						onError(queryError, response);
+					else if(!data.records || data.records.length == 0){
+						conn.sobject("Delivery__c").update([
+							{Id : request.body.Related_Delivery__c, Status__c : "Checked In"}
+						], function(err2, rets2){
+							if(err2)
+								onError(err2, response);
+
+							//Check if all items for all orders have been returned
+							conn.query("SELECT Id FROM Delivery_Item__c WHERE Related_Delivery__r.Dorrbell_Order__c = '" + request.body.Related_Delivery__r.Dorrbell_Order__c + "' AND Status__c = 'Returning'", function(err3, data2){
+								if(!data2.records || data2.records.length == 0)
+									setOrderStatus(request.body.Related_Delivery__r.Dorrbell_Order__c, "All Items Returned to All Retailers", null, null, null, null, null, response);
+								else
+									response.status(200).send("Ok");
+							});
+						});
+					}
+				});
+			}
+		})
+	});
 
 	apiRoutes.post('/createDeliveryItem', function(request, response){
 		var deliveryId = request.body.deliveryId;
@@ -160,8 +440,6 @@ module.exports = function(apiRoutes, conn){
 						FROM Variant__c \
 						WHERE Id = '" + variantId + "'", 
 		function(err, data){
-			console.log(err);
-			console.log(data);
 			var variant = data.records[0];
 			if(err || !variant){
 				onError(err, response);
@@ -177,7 +455,8 @@ module.exports = function(apiRoutes, conn){
 					"Related_Variant__c" : variant.Id,
 					"Sku__c" : variant.Variant_SKU__c,
 					"Related_Delivery__c" : deliveryId,
-					"Item_Added_By__c" : contactId
+					"Item_Added_By__c" : contactId,
+					"Item_Added_At__c" : new Date()
 				}, function(error2, ret){
 					if(error2 || !ret.success){
 						onError(error2, response);
@@ -188,10 +467,6 @@ module.exports = function(apiRoutes, conn){
 			}
 		});
 		
-	})
-
-	apiRoutes.get("/me", function(request, response){
-		response.send(request.decoded);
 	});
 
 	return {
