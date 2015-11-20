@@ -422,28 +422,62 @@ module.exports = function(apiRoutes, conn, utils){
 		var contactId = req.params.contactId;
 		var imageData = req.body.imageData;
 		
-		if(contactId && imageData && imageData.indexOf("base64,") != -1){
-			console.log(imageData);
-			var base64data = imageData.substring(imageData.indexOf("base64,") + 7);
-			console.log(base64data);
-			conn.sobject("Attachment").create({
-				ParentId : contactId,
-				Name: "profile.jpg",
-				body: base64data,
-				ContentType: "image/jpeg"
-			}, function(err, ret){
+		var imgUpload = new Promise(function(resolve, reject){
+			conn.query("SELECT Id FROM Attachment WHERE ParentId = '" + contactId + "' AND Name = 'profile.jpg'", function(err, data){
 				if(err)
-					onError(err, res);
-				else{
-					utils.getUser(conn, contactId, function(data){
-						res.status(200).send(data);
-					}, function(err){
-						onError(err, res);
+					reject(err);
+				else if(data.records && data.records.length > 0){
+					resolve(data.records);
+				}else{
+					resolve();
+				}
+			});
+		}).then(function(recordsToDelete){
+			if(recordsToDelete){
+				return new Promise(function(resolve, reject){
+					var idArray = new Array();
+					for(var i in recordsToDelete){
+						idArray.push(recordsToDelete[i].Id);
+					}
+					conn.sobject("Attachment").del(idArray, function(err, rets){
+						if(err)
+							reject(err);
+						else
+							resolve(rets);
 					});
-				}		
-			})
-		}else{
-			onError("Invalid", res);
-		}
+				})	;
+			}else{
+				return null;
+			}
+			
+		}, function(err){
+			onError(err, response);
+		}).then(function(){
+			if(contactId && imageData && imageData.indexOf("base64,") != -1){
+				var base64data = imageData.substring(imageData.indexOf("base64,") + 7);
+				conn.sobject("Attachment").create({
+					ParentId : contactId,
+					Name: "profile.jpg",
+					body: base64data,
+					ContentType: "image/jpeg"
+				}, function(err, ret){
+					if(err)
+						onError(err, res);
+					else{
+						utils.getUser(conn, contactId, function(data){
+							res.status(200).send(data);
+						}, function(err){
+							onError(err, res);
+						});
+					}		
+				})
+			}else{
+				onError("Invalid", res);
+			}
+		}, function(err){
+			onError(err, response);
+		})
+
+		
 	});
 }
