@@ -47,7 +47,8 @@ module.exports = function(){
 	  					MobilePhone, \
 	  					RecordType.Name, \
 	  					RecordType.DeveloperName, \
-	  					Store__c \
+	  					Store__c, \
+	  					(SELECT Id, Body FROM Attachments WHERE Name = 'profile.jpg')
 	  				FROM Contact WHERE Id = '" + contactId + "'", function(err, data){
 	  			if(err || !data.records)
 	  				error(err);
