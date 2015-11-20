@@ -95,7 +95,8 @@ apiRoutes.use(function(req, res, next) {
   }
 });
 
-var authPath = require('./routes/authenticated')(apiRoutes, conn);
+var socketUtils = require('./routes/utils')();
+var authPath = require('./routes/authenticated')(apiRoutes, conn, socketUtils);
 
 app.use('/api', apiRoutes);
 
@@ -104,10 +105,13 @@ var server = http.createServer(app);
 var io = require('socket.io').listen(server);
 
 io.sockets.on("connection", function(socket){
+  socketUtils.addConnection(socket);
+
   socket.on("update", function(data){
     console.log("broadcasting");
     console.log(data);
-    socket.broadcast.emit("update", data);
+    io.to(data.id).emit("update", data);
+    //socket.broadcast.emit("update", data);
   })
 })
 

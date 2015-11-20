@@ -1,9 +1,7 @@
-module.exports = function(apiRoutes, conn){
+module.exports = function(apiRoutes, conn, utils){
 
 	var globalDescribe;
 	var updated = {};
-	var socketConnection = new Array();
-	var server;
 
 	var onError = function(err, response){
 		response.status(400);
@@ -163,63 +161,6 @@ module.exports = function(apiRoutes, conn){
 		}, function(errors){
 			onError(errors, response);
 		});
-
-		/*
-		console.log("setting order status");
-		conn.sobject("Dorrbell_Order__c").update({
-			Id : orderId,
-			Status__c : orderStatus
-		}, function(error1, response1){
-			if(!error1 && response1.success){
-				if(deliveryStatus){
-					console.log("setting delivery status");
-					conn.query("SELECT Id FROM Delivery__c WHERE Dorrbell_Order__c = '" + orderId + "'", function(error2, response2){
-						if(!error2 && response2.records){
-							var idArray = new Array();
-							for(var i =0; i<response2.records.length; i++){
-								idArray.push({
-									"Id" : response2.records[i].Id
-									, "Status__c" : deliveryStatus
-								});
-							}
-							conn.sobject("Delivery__c").update(idArray, function(error3, response3){
-								if(error3)
-									onError(error3, response);
-								else if(itemStatus){
-									console.log("setting item status");
-									conn.query("SELECT Id FROM Delivery_Item__c WHERE Status__c = 'Checked Out' AND Related_Delivery__r.Dorrbell_Order__c = '" + orderId + "'", function(error4, response4){
-										if(!error4 && response4.records){
-											var itemIdArray = new Array();
-											for(var i = 0; i<response4.records.length; i++){
-												itemIdArray.push({
-													"Id" : response4.records[i].Id
-													, "Status__c" : itemStatus
-												});
-											}
-											conn.sobject("Delivery_Item__c").update(itemIdArray, function(error5, response5){
-												if(error5)
-													onError(error5, response);
-												else
-													response.status(200).send("Ok");
-											})
-										}else{
-											onError(error4, response);
-										}
-									})
-								}else{
-									response.status(200).send("Ok");
-								}
-							})
-						}else
-							onError(error2, response);
-					})
-				}else{
-					response.status(200).send("Ok");
-				}
-			}else{
-				onError(error1, response);
-			}
-		})*/
 	}
 
 	
@@ -234,7 +175,7 @@ module.exports = function(apiRoutes, conn){
 		var offset = request.params.offset;
 		var geo = "GEOLOCATION(" + request.params.latitude + "," + request.params.longitude + ")";
 		var order = "ORDER BY DISTANCE(Dorrbell_Product__r.Store__r.Coordinates__c, " + geo + ", 'mi')";
-		querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id), Dorrbell_Product__c(Id)", limit, offset, order, response);
+		querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id WHERE Barcode__c != null), Dorrbell_Product__c(Id)", limit, offset, order, response);
 	});
 
 	apiRoutes.get('/searchStoreItems/:store/:searchString/:limit/:offset', function(request, response){
@@ -243,7 +184,7 @@ module.exports = function(apiRoutes, conn){
 		var limit = request.params.limit;
 		var offset = request.params.offset;
 		var order = "ORDER BY Name DESC";
-		querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id WHERE Store_Id__c = '" + store + "'), Dorrbell_Product__c(Id)", limit, offset, order, response);
+		querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id WHERE Store_Id__c = '" + store + "' AND Barcode__c != null), Dorrbell_Product__c(Id)", limit, offset, order, response);
 	});
 
 	apiRoutes.get('/describe/:sObject', function(request, response){
@@ -279,8 +220,14 @@ module.exports = function(apiRoutes, conn){
 			if(err)
 				onError(err, response);
 
+			//join rooms based on results
+			if(request.body.socketId)
+				utils.joinRooms(data.records, request.body.socketId);
+
 			response.json(data.records);
 		});
+
+
 	});
 
 	
@@ -296,10 +243,12 @@ module.exports = function(apiRoutes, conn){
 			    }
 			}
 			var retsJSON = JSON.stringify(rets);
+			/*
 			if(server)
 				server.clients.forEach(function each(client){
 					client.send(retsJSON);
 				})
+			*/
 
 			response.status(200).send("Ok");
 		})
@@ -380,15 +329,6 @@ module.exports = function(apiRoutes, conn){
 		}, function(errors){
 			onError(errors, response);
 		});
-		/*
-		conn.query("SELECT Id FROM Delivery_Item__c WHERE Status__c = 'Checked Out' OR Status__c = 'Returning'", function(err, data){
-			if(err)
-				onError(err, response);
-			else if(data.records && data.records.length > 0)
-				onError("Invalid Items", response);
-			else
-				setOrderStatus(request.body.Id, "Successfully Completed", "Complete", "Purchased", response);
-		});*/
 
 	});
 
@@ -468,20 +408,5 @@ module.exports = function(apiRoutes, conn){
 		});
 		
 	});
-
-	return {
-		addConnection : function(conn){
-			var index = socketConnection.push(conn) - 1;
-			conn.on('close', function(closed){
-				console.log((new Date()) + " Peer "
-                + closed + " disconnected.");
-				socketConnection.splice(index, 1);
-			});
-		},
-
-		setServer : function(s){
-			server = s;
-		}
-	}
 
 }
