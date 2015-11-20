@@ -421,7 +421,7 @@ module.exports = function(apiRoutes, conn, utils){
 	 apiRoutes.post("/uploadProfilePhoto/:contactId", function(req,res){
 		var contactId = req.params.contactId;
 		var imageData = req.body.imageData;
-		var base64data = new Buffer(imageData).toString('base64');
+		var base64data = Base64.decode(imageData);
 		if(contactId && imageData){
 			conn.sobject("Attachment").create({
 				ParentId : contactId,
