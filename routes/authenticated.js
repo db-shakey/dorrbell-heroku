@@ -424,7 +424,7 @@ module.exports = function(apiRoutes, conn, utils){
 		if(contactId && imageData){
 			conn.sobject("Attachment").create({
 				ParentId : contactId,
-				Namme: "Profile.jpg",
+				Name: "profile.jpg",
 				Body: imageData,
 				ContentType: "image/jpeg"
 			}, function(err, ret){
