@@ -197,7 +197,12 @@ module.exports = function(apiRoutes, conn, utils){
 	});
 
 	apiRoutes.get("/me", function(request, response){
-		response.send(request.decoded);
+		var contactId = request.decoded.Id;
+		utils.getUser(conn, contactId, function(data){
+			response.status(200).send(data);
+		}, function(err){
+			onError(err, response);
+		});
 	});
 
 	apiRoutes.post('/hasUpdated', function(request, response){
@@ -409,4 +414,32 @@ module.exports = function(apiRoutes, conn, utils){
 		
 	});
 
+
+	/**************************
+	 * My Account
+	 *************************/
+	 apiRoutes.post("/uploadProfilePhoto/:contactId", function(req,res){
+		var contactId = req.params.contactId;
+		var imageData = req.body.imageData;
+		if(contactId && imageData){
+			conn.sobject("Attachment").create({
+				ParentId : contactId,
+				Namme: "Profile.jpg",
+				Body: imageData,
+				ContentType: "image/jpeg"
+			}, function(err, ret){
+				if(err)
+					onError(err, res);
+				else{
+					utils.getUser(conn, contactId, function(data){
+						res.status(200).send(data);
+					}, function(err){
+						onError(err, res);
+					});
+				}		
+			})
+		}else{
+			onError("Invalid", res);
+		}
+	});
 }

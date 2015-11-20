@@ -36,6 +36,24 @@ module.exports = function(){
 		            }
 		        }
 		    }
+		},
+		getUser : function(conn, contactId, callback, error){
+			conn.query("SELECT Id, \
+	  					Password__c, \
+	  					Email, \
+	  					Name, \
+	  					FirstName, \
+	  					LastName, \
+	  					MobilePhone, \
+	  					RecordType.Name, \
+	  					RecordType.DeveloperName, \
+	  					Store__c \
+	  				FROM Contact WHERE Id = '" + contactId + "'", function(err, data){
+	  			if(err || !data.records)
+	  				error(err);
+	  			else
+	  				callback(data.records[0]);
+	  		});
 		}
 	}
 

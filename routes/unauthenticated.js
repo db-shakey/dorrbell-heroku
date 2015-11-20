@@ -79,7 +79,6 @@ module.exports = function(apiRoutes, conn, utils){
 				}
 			});
 		}
-
 	});
 
 };
