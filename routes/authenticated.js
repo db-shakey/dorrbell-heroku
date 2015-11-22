@@ -272,6 +272,8 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		], function(err, rets){
 			if(err)
 				onError(err, repsonse);
+			else
+				response.status(200).send("Ok");
 		})
 	});
 
