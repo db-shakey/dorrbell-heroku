@@ -150,9 +150,9 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 		var deffereds = new Array();
 		deffereds.push(orderStatus);
-		if(deliveryStatus)
+		if(deliveryStatus && deliveryStatus != null)
 			deffereds.push(setDeliveryStatus);
-		if(itemStatus)
+		if(itemStatus && itemStatus != null)
 			deffereds.push(setItemStatus);
 
 		Promise.all(deffereds).then(function(results){
