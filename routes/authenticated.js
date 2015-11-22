@@ -66,7 +66,8 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	}
 
 	var setOrderStatus = function(orderId, orderStatus, deliveryStatus, itemStatus, orderRecordTypeId, deliveryRecordTypeId, itemRecordTypeId, response){
-
+		var setDeliveryStatus;
+		var setItemStatus;
 		var orderStatus = new Promise(function(resolve, reject){
 			var data = {
 				Id : orderId,
@@ -81,72 +82,82 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 				else
 					resolve(result);
 			});
+		}).then(function(updateOrderStatus){
+			if(deliveryStatus && deliveryStatus != null){
+				setDeliveryStatus = new Promise(function(deliveryResolve, deliveryReject){
+					var getDeliveries = new Promise(function(resolve, reject){
+						conn.query("SELECT Id FROM Delivery__c WHERE Dorrbell_Order__c = '" + orderId + "'", function(error, result){
+							if(error || !result.records)
+								reject(error);
+							else
+								resolve(result);
+						});
+					});
+
+					getDeliveries.then(function(data){
+						console.log("Setting delivery status");
+						var idArray = new Array();
+						for(var i =0; i<data.records.length; i++){
+							var record = {
+								"Id" : data.records[i].Id
+								, "Status__c" : deliveryStatus
+							};
+							if(deliveryRecordTypeId)
+								record.RecordTypeId = deliveryRecordTypeId;
+
+							idArray.push(record);
+						}
+						conn.sobject("Delivery__c").update(idArray, function(error, result){
+							if(error){
+								deliveryReject(error);
+							}
+							else
+								deliveryResolve(result);
+						})
+					}, deliveryReject);
+				})
+			}
+
+
+			if(itemStatus && itemStatus != null){
+				setItemStatus = new Promise(function(itemResolve, itemReject){
+					var getItems = new Promise(function(resolve, reject){
+						conn.query("SELECT Id FROM Delivery_Item__c WHERE Status__c = 'Checked Out' AND Related_Delivery__r.Dorrbell_Order__c = '" + orderId + "'", function(error, result){
+							if(error || !result.records)
+								reject(error);
+							else
+								resolve(result);
+						});
+					});
+
+					getItems.then(function(data){
+						var itemIdArray = new Array();
+						for(var i = 0; i<data.records.length; i++){
+							var record = {
+								"Id" : data.records[i].Id
+								, "Status__c" : itemStatus
+							};
+							if(itemRecordTypeId)
+								record.RecordTypeId = itemRecordTypeId;
+
+							itemIdArray.push(record);
+						}
+						conn.sobject("Delivery_Item__c").update(itemIdArray, function(error, result){
+							if(error){
+								itemReject(error);
+							}
+							else
+								itemResolve(result);
+						})
+					}, itemReject);
+				});
+
+			}
 		});
 
-		var setDeliveryStatus = new Promise(function(deliveryResolve, deliveryReject){
-			var getDeliveries = new Promise(function(resolve, reject){
-				conn.query("SELECT Id FROM Delivery__c WHERE Dorrbell_Order__c = '" + orderId + "'", function(error, result){
-					if(error || !result.records)
-						reject(error);
-					else
-						resolve(result);
-				});
-			});
+		
 
-			getDeliveries.then(function(data){
-				console.log("Setting delivery status");
-				var idArray = new Array();
-				for(var i =0; i<data.records.length; i++){
-					var record = {
-						"Id" : data.records[i].Id
-						, "Status__c" : deliveryStatus
-					};
-					if(deliveryRecordTypeId)
-						record.RecordTypeId = deliveryRecordTypeId;
-
-					idArray.push(record);
-				}
-				conn.sobject("Delivery__c").update(idArray, function(error, result){
-					if(error){
-						deliveryReject(error);
-					}
-					else
-						deliveryResolve(result);
-				})
-			}, deliveryReject);
-		})
-
-		var setItemStatus = new Promise(function(itemResolve, itemReject){
-			var getItems = new Promise(function(resolve, reject){
-				conn.query("SELECT Id FROM Delivery_Item__c WHERE Status__c = 'Checked Out' AND Related_Delivery__r.Dorrbell_Order__c = '" + orderId + "'", function(error, result){
-					if(error || !result.records)
-						reject(error);
-					else
-						resolve(result);
-				});
-			});
-
-			getItems.then(function(data){
-				var itemIdArray = new Array();
-				for(var i = 0; i<data.records.length; i++){
-					var record = {
-						"Id" : data.records[i].Id
-						, "Status__c" : itemStatus
-					};
-					if(itemRecordTypeId)
-						record.RecordTypeId = itemRecordTypeId;
-
-					itemIdArray.push(record);
-				}
-				conn.sobject("Delivery_Item__c").update(itemIdArray, function(error, result){
-					if(error){
-						itemReject(error);
-					}
-					else
-						itemResolve(result);
-				})
-			}, itemReject);
-		});
+		
 
 		var deffereds = new Array();
 		deffereds.push(orderStatus);
