@@ -96,7 +96,7 @@ apiRoutes.use(function(req, res, next) {
 });
 
 var socketUtils = require('./routes/utils')();
-var authPath = require('./routes/authenticated')(apiRoutes, conn, socketUtils);
+var authPath = require('./routes/authenticated')(apiRoutes, conn, socketUtils, utils);
 
 app.use('/api', apiRoutes);
 

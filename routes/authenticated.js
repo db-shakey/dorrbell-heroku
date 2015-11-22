@@ -1,4 +1,4 @@
-module.exports = function(apiRoutes, conn, utils){
+module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 	var globalDescribe;
 	var updated = {};
@@ -127,7 +127,6 @@ module.exports = function(apiRoutes, conn, utils){
 			});
 
 			getItems.then(function(data){
-				console.log("Setting item status");
 				var itemIdArray = new Array();
 				for(var i = 0; i<data.records.length; i++){
 					var record = {
@@ -198,7 +197,7 @@ module.exports = function(apiRoutes, conn, utils){
 
 	apiRoutes.get("/me", function(request, response){
 		var contactId = request.decoded.Id;
-		utils.getUser(conn, contactId, function(data){
+		socketUtils.getUser(conn, contactId, function(data){
 			response.status(200).send(data);
 		}, function(err){
 			onError(err, response);
@@ -227,7 +226,7 @@ module.exports = function(apiRoutes, conn, utils){
 
 			//join rooms based on results
 			if(request.body.socketId)
-				utils.joinRooms(data.records, request.body.socketId);
+				socketUtils.joinRooms(data.records, request.body.socketId);
 
 			response.json(data.records);
 		});
@@ -449,7 +448,6 @@ module.exports = function(apiRoutes, conn, utils){
 			}else{
 				return null;
 			}
-			
 		}, function(err){
 			onError(err, response);
 		}).then(function(){
@@ -464,7 +462,7 @@ module.exports = function(apiRoutes, conn, utils){
 					if(err)
 						onError(err, res);
 					else{
-						utils.getUser(conn, contactId, function(data){
+						socketUtils.getUser(conn, contactId, function(data){
 							res.status(200).send(data);
 						}, function(err){
 							onError(err, res);
@@ -477,7 +475,49 @@ module.exports = function(apiRoutes, conn, utils){
 		}, function(err){
 			onError(err, response);
 		})
-
-		
 	});
+
+	apiRoutes.post("/changePassword", function(request, response){
+		var passwordForm = request.body.password;
+		var contactForm = request.body.contact;
+		var getContact = new Promise(function(resolve, reject){
+			conn.query("SELECT Id, Password__c FROM Contact WHERE Email = '" + contactForm.Email + "'", function(error, result){
+				if(error)
+					reject(error);
+				else if(!result.records || result.records.length == 0)
+					reject("Couldn't locate user record");
+				else
+					resolve(result);
+			});
+		}).then(function(data){
+			console.log(data);
+			return new Promise(function(resolve, reject){
+				var contact = data.records[0];
+				if(utils.encryptText(passwordForm.old) != contact.password__c){
+					reject("Incorrect Password");
+				}else if(passwordForm.newPassword != passwordForm.confirm){
+					reject("Your passwords do not match");
+				}else{
+					conn.sobject("Contact").update({
+						Id : contact.Id,
+						Password__c : utils.encryptText(passwordForm.newPassword)
+					}, function(error, response){
+						console.log(response);
+						console.log(error);
+						if(error)
+							reject(error);
+						else
+							resolve(response);
+					});
+				}
+			});
+		}, function(error){
+			onError(error, response);
+		}).then(function(data){
+			response.status(200).send(data);
+		}, function(error){
+			onError(error, response);
+		});
+
+	})
 }
