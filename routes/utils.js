@@ -15,7 +15,6 @@ module.exports = function(){
 		},
 
 		joinRooms : function(obj, socketId, socket){
-
 			if(!socket){
 				for(var i in connectionArray){
 					if(connectionArray[i].id == socketId){
@@ -27,15 +26,87 @@ module.exports = function(){
 
 			for (var p in obj) {
 		        if (obj.hasOwnProperty(p)) {
-		            if (p === "Id") {
+		            if (p === "Id" || this.isSalesforceId(obj[p])) {
 		            	console.log("Socket " + socketId + " joining room " + obj[p]);
 		            	socket.join(obj[p]);
 		            } else if (obj[p] instanceof Object) {
-
 		                this.joinRooms(obj[p], socketId, socket);
 		            }
 		        }
 		    }
+		},
+		isSalesforceId : function(strSf){
+			if(!strSf || !strSf.length || strSf.length != 18)
+				return false;
+			else{
+				var checksumMap = {
+					'A' : '00000',
+					'B' : '00001',
+					'C' : '00010',
+					'D' : '00011',
+					'E' : '00100',
+					'F' : '00101',
+					'G' : '00110',
+					'H' : '00111',
+					'I' : '01000',
+					'J' : '01001',
+					'K' : '01010',
+					'L' : '01011',
+					'M' : '01100',
+					'N' : '01101',
+					'O' : '01110',
+					'P' : '01111',
+					'Q' : '10000',
+					'R' : '10001',
+					'S' : '10010',
+					'T' : '10011',
+					'U' : '10100',
+					'V' : '10101',
+					'W' : '10110',
+					'X' : '10111',
+					'Y' : '11000',
+					'Z' : '11001',
+					'0' : '11010',
+					'1' : '11011',
+					'2' : '11100',
+					'3' : '11101',
+					'4' : '11110',
+					'5' : '11111'
+				};
+				var checksum = strSf.substring(15, 18);			//EAI
+				var p1 = checksumMap[checksum.charAt(0)];		//00100
+				var p2 = checksumMap[checksum.charAt(1)];		//00000
+				var p3 = checksumMap[checksum.charAt(2)];		//01000
+				var p1r = p1.split("").reverse().join("");		//00100
+				var p2r = p2.split("").reverse().join("");		//00000
+				var p3r = p3.split("").reverse().join("");		//00010
+				
+				var valid = true;
+				for(var i = 0; i < p1r.length; i++){
+					var character = strSf.charAt(1 * i);
+					valid = (p1r.charAt(i) == "1" && character == character.toUpperCase()) || (p1r.charAt(i) == "0" && character == character.toLowerCase())
+					if(valid === false)
+						break;
+				}
+				if(valid === true){
+					for(var i = 0; i < p2r.length; i++){
+						var character = strSf.charAt(2 * i);
+						valid = (p2r.charAt(i) == "1" && character == character.toUpperCase()) || (p2r.charAt(i) == "0" && character == character.toLowerCase());
+						if(valid === false)
+							break;
+					}	
+				}
+				if(valid === true){
+					for(var i = 0; i < p3r.length; i++){
+						var character = strSf.charAt(3 * i);
+						valid = (p3r.charAt(i) == "1" && character == character.toUpperCase()) || (p3r.charAt(i) == "0" && character == character.toLowerCase());
+						if(valid === false)
+							break;
+					}	
+				}
+				return valid;
+			}
+
 		},
 		getUser : function(conn, contactId, callback, error){
 	  		var contact = new Promise(function(resolve, reject){
