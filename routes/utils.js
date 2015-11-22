@@ -77,34 +77,39 @@ module.exports = function(){
 				var p1 = checksumMap[checksum.charAt(0)];		//00100
 				var p2 = checksumMap[checksum.charAt(1)];		//00000
 				var p3 = checksumMap[checksum.charAt(2)];		//01000
-				var p1r = p1.split("").reverse().join("");		//00100
-				var p2r = p2.split("").reverse().join("");		//00000
-				var p3r = p3.split("").reverse().join("");		//00010
+				if(p1 && p2 && p3){
+					var p1r = p1.split("").reverse().join("");		//00100
+					var p2r = p2.split("").reverse().join("");		//00000
+					var p3r = p3.split("").reverse().join("");		//00010
+					
+
+					var valid = true;
+					for(var i = 0; i < p1r.length; i++){
+						var character = strSf.charAt(1 * i);
+						valid = (p1r.charAt(i) == "1" && character == character.toUpperCase()) || (p1r.charAt(i) == "0" && character == character.toLowerCase())
+						if(valid == false)
+							break;
+					}
+					if(valid == true){
+						for(var i = 0; i < p2r.length; i++){
+							var character = strSf.charAt(2 * i);
+							valid = (p2r.charAt(i) == "1" && character == character.toUpperCase()) || (p2r.charAt(i) == "0" && character == character.toLowerCase());
+							if(valid == false)
+								break;
+						}	
+					}
+					if(valid == true){
+						for(var i = 0; i < p3r.length; i++){
+							var character = strSf.charAt(3 * i);
+							valid = (p3r.charAt(i) == "1" && character == character.toUpperCase()) || (p3r.charAt(i) == "0" && character == character.toLowerCase());
+							if(valid == false)
+								break;
+						}	
+					}
+					return valid;
+				}else
+					return false;
 				
-				var valid = true;
-				for(var i = 0; i < p1r.length; i++){
-					var character = strSf.charAt(1 * i);
-					valid = (p1r.charAt(i) == "1" && character == character.toUpperCase()) || (p1r.charAt(i) == "0" && character == character.toLowerCase())
-					if(valid === false)
-						break;
-				}
-				if(valid === true){
-					for(var i = 0; i < p2r.length; i++){
-						var character = strSf.charAt(2 * i);
-						valid = (p2r.charAt(i) == "1" && character == character.toUpperCase()) || (p2r.charAt(i) == "0" && character == character.toLowerCase());
-						if(valid === false)
-							break;
-					}	
-				}
-				if(valid === true){
-					for(var i = 0; i < p3r.length; i++){
-						var character = strSf.charAt(3 * i);
-						valid = (p3r.charAt(i) == "1" && character == character.toUpperCase()) || (p3r.charAt(i) == "0" && character == character.toLowerCase());
-						if(valid === false)
-							break;
-					}	
-				}
-				return valid;
 			}
 
 		},

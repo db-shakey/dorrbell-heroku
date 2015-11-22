@@ -231,6 +231,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 	apiRoutes.post('/query', function(request, response){
 		var query = request.body.query.replace(new RegExp('SELECT ', 'g'), 'SELECT LastModifiedDate, ');
+		console.log(query);
 		conn.query(query, function(err, data){
 			if(err)
 				onError(err, response);
