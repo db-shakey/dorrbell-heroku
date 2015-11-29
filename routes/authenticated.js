@@ -342,7 +342,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 					else if(results[0].records[i].SobjectType == 'Delivery__c' && results[0].records[i].DeveloperName == 'Complete')
 						deliveryRecordTypeId = results[0].records[i].Id;
 				}
-				setOrderStatus(request.body.Id, "Successfully Completed", "Complete", "Purchased", orderRecordTypeId, deliveryRecordTypeId, null, response);
+				setOrderStatus(request.body.Id, "Completed", "Complete", "Purchased", orderRecordTypeId, deliveryRecordTypeId, null, response);
 			}
 		}, function(errors){
 			onError(errors, response);
