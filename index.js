@@ -102,7 +102,10 @@ app.use('/api', apiRoutes);
 
 
 var server = http.createServer(app);
-var io = require('socket.io').listen(server);
+var io = require('socket.io')(server,{
+  path: '/socket.io-client'
+});
+io.set('transports', ['websocket']);
 
 io.sockets.on("connection", function(socket){
   socketUtils.addConnection(socket);
