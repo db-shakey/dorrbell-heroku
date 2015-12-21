@@ -23,7 +23,7 @@ var apiRoutes = express.Router();
 var conn = new jsforce.Connection();
 var socketServer;
 
-conn.login('shakey@dorrbell.com', 'Seketha2Us9W6kJ7PNo9hlpGf1QZGFYj', function(err, res){
+conn.login('shakey@dorrbell.com', 'Seketha3OcPjDdJZZOaB9LEGuQs2lnwwm', function(err, res){
   if(err){return console.error(err);}
 });
 
@@ -37,8 +37,8 @@ apiRoutes.post('/error', function(req, res){
   conn.sobject('Mobile_Error__c').create([
     req.body
   ], function(err, rets){
-    if (err) { 
-      res.status(401).send(err); 
+    if (err) {
+      res.status(401).send(err);
     }
     for (var i=0; i < rets.length; i++) {
       if (!rets[i].success) {
@@ -73,12 +73,12 @@ apiRoutes.use(function(req, res, next) {
   if (token) {
 
     // verifies secret and checks exp
-    jwt.verify(token, utils.getPassword(), function(err, decoded) {      
+    jwt.verify(token, utils.getPassword(), function(err, decoded) {
       if (err) {
-        return res.json({ success: false, message: 'Failed to authenticate token.' });    
+        return res.json({ success: false, message: 'Failed to authenticate token.' });
       } else {
         // if everything is good, save to request for use in other routes
-        req.decoded = decoded;    
+        req.decoded = decoded;
         next();
       }
     });
@@ -87,11 +87,11 @@ apiRoutes.use(function(req, res, next) {
 
     // if there is no token
     // return an error
-    return res.status(403).send({ 
-        success: false, 
-        message: 'No token provided.' 
+    return res.status(403).send({
+        success: false,
+        message: 'No token provided.'
     });
-    
+
   }
 });
 
@@ -132,10 +132,3 @@ https.createServer({
 }, app).listen(8443, function(){
   console.log("Dorrbell secure listening on port 443");
 });
-
-
-
-
-
-
-
