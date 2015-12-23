@@ -111,8 +111,6 @@ io.sockets.on("connection", function(socket){
   socketUtils.addConnection(socket);
 
   socket.on("update", function(data){
-    console.log("broadcasting");
-    console.log(data);
     io.to(data.id).emit("update", data);
     //socket.broadcast.emit("update", data);
   })

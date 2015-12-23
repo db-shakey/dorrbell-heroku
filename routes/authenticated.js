@@ -55,10 +55,11 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 							WHERE " + where + " " +
 							geo +
 							" LIMIT " + limit + " OFFSET " + offset;
+					console.log(query);
 					conn.query(query, function(err, queryData){
 						if(err)
 							onError(err, response);
-						response.json(queryData);			
+						response.json(queryData);
 					});
 				}
 			}
@@ -95,7 +96,6 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 					});
 
 					getDeliveries.then(function(data){
-						console.log("Setting delivery status");
 						var idArray = new Array();
 						for(var i =0; i<data.records.length; i++){
 							var record = {
@@ -155,9 +155,9 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 			}
 		});
 
-		
 
-		
+
+
 
 		var deffereds = new Array();
 		deffereds.push(orderStatus);
@@ -173,7 +173,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		});
 	}
 
-	
+
 
 	apiRoutes.get('/ping', function(request, response){
 		response.send('valid_token');
@@ -194,7 +194,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		var limit = request.params.limit;
 		var offset = request.params.offset;
 		var order = "ORDER BY Name DESC";
-		querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id WHERE Store_Id__c = '" + store + "' AND Barcode__c != null), Dorrbell_Product__c(Id)", limit, offset, order, response);
+		querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id WHERE Store_Id__c = '" + store + "' AND Barcode__c != null), Dorrbell_Product__c(Id WHERE Store__c = '" + store + "')", limit, offset, order, response);
 	});
 
 	apiRoutes.get('/describe/:sObject', function(request, response){
@@ -231,14 +231,16 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 	apiRoutes.post('/query', function(request, response){
 		var query = request.body.query.replace(new RegExp('SELECT ', 'g'), 'SELECT LastModifiedDate, ');
-		console.log(query);
 		conn.query(query, function(err, data){
 			if(err)
 				onError(err, response);
 
 			//join rooms based on results
-			if(request.body.socketId)
+			console.log(request.body.socketId);
+			if(request.body.socketId){
 				socketUtils.joinRooms(data.records, request.body.socketId);
+			}
+
 
 			response.json(data.records);
 		});
@@ -246,7 +248,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 	});
 
-	
+
 
 	apiRoutes.post('/update/:sObject', function(request, response){
 		conn.sobject(request.params.sObject).update([
@@ -310,7 +312,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	});
 
 	apiRoutes.post("/completeOrder", function(request, response){
-		
+
 		var recordTypes = new Promise(function(resolve, reject){
 			conn.query("SELECT Id, sObjectType, DeveloperName FROM RecordType WHERE DeveloperName = 'Complete' AND (sObjectType = 'Dorrbell_Order__c' OR sObjectType = 'Delivery__c')", function(err, rets){
 				if(err){
@@ -396,7 +398,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 							Variant_SKU__c, \
 							Store_Id__c \
 						FROM Variant__c \
-						WHERE Id = '" + variantId + "'", 
+						WHERE Id = '" + variantId + "'",
 		function(err, data){
 			var variant = data.records[0];
 			if(err || !variant){
@@ -424,7 +426,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 				});
 			}
 		});
-		
+
 	});
 
 
@@ -434,7 +436,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	 apiRoutes.post("/uploadProfilePhoto/:contactId", function(req,res){
 		var contactId = req.params.contactId;
 		var imageData = req.body.imageData;
-		
+
 		var imgUpload = new Promise(function(resolve, reject){
 			conn.query("SELECT Id FROM Attachment WHERE ParentId = '" + contactId + "' AND Name = 'profile.jpg'", function(err, data){
 				if(err)
@@ -481,7 +483,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 						}, function(err){
 							onError(err, res);
 						});
-					}		
+					}
 				})
 			}else{
 				onError("Invalid", res);
@@ -504,7 +506,6 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 					resolve(result);
 			});
 		}).then(function(data){
-			console.log(data);
 			return new Promise(function(resolve, reject){
 				var contact = data.records[0];
 				if(utils.encryptText(passwordForm.old) != contact.password__c){
@@ -516,8 +517,6 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 						Id : contact.Id,
 						Password__c : utils.encryptText(passwordForm.newPassword)
 					}, function(error, response){
-						console.log(response);
-						console.log(error);
 						if(error)
 							reject(error);
 						else
