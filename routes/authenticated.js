@@ -52,6 +52,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	}
 
 	var getItemSearchQuery = function(where, geo, limit, offset){
+		var g = (geo) ? geo : '';
 		return  "SELECT Id, \
 						Variant_SKU__c, \
 						Name, \
@@ -65,7 +66,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 						Compare_At_Price__c \
 					FROM Variant__c \
 				WHERE " + where + " " +
-				geo +
+				g +
 				" LIMIT " + limit + " OFFSET " + offset;
 	}
 
