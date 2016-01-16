@@ -40,22 +40,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 
 				if(where){
-					var query = "SELECT Id, \
-									Variant_SKU__c, \
-									Name, \
-									Variant_Title__c, \
-									Variant_Price__c, \
-									Image_URL__c, \
-									Barcode__c, \
-									Store_Name__c, \
-									Store_Id__c, \
-									Dorrbell_Product__r.Name, \
-									Compare_At_Price__c \
-								FROM Variant__c \
-							WHERE " + where + " " +
-							geo +
-							" LIMIT " + limit + " OFFSET " + offset;
-					console.log(query);
+					var query = getItemSearchQuery(where, geo, limit, offset);
 					conn.query(query, function(err, queryData){
 						if(err)
 							onError(err, response);
@@ -64,6 +49,24 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 				}
 			}
 		});
+	}
+
+	var getItemSearchQuery = function(where, geo, limit, offset){
+		return  "SELECT Id, \
+						Variant_SKU__c, \
+						Name, \
+						Variant_Title__c, \
+						Variant_Price__c, \
+						Image_URL__c, \
+						Barcode__c, \
+						Store_Name__c, \
+						Store_Id__c, \
+						Dorrbell_Product__r.Name, \
+						Compare_At_Price__c \
+					FROM Variant__c \
+				WHERE " + where + " " +
+				geo +
+				" LIMIT " + limit + " OFFSET " + offset;
 	}
 
 	var setOrderStatus = function(orderId, orderStatus, deliveryStatus, itemStatus, orderRecordTypeId, deliveryRecordTypeId, itemRecordTypeId, response){
@@ -194,7 +197,16 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		var limit = request.params.limit;
 		var offset = request.params.offset;
 		var order = "ORDER BY Name DESC";
-		querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id WHERE Store_Id__c = '" + store + "' AND Barcode__c != null), Dorrbell_Product__c(Id WHERE Store__c = '" + store + "')", limit, offset, order, response);
+		if(text && text.trim().length() > 1)
+			querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id WHERE Store_Id__c = '" + store + "' AND Barcode__c != null), Dorrbell_Product__c(Id WHERE Store__c = '" + store + "')", limit, offset, order, response);
+		else {
+			var query = getItemSearchQuery("Store__c = '" + store + "'", null, limit, offset);
+			conn.query(query, function(err, queryData){
+				if(err)
+					onError(err, response);
+				response.json(queryData);
+			});
+		}
 	});
 
 	apiRoutes.get('/describe/:sObject', function(request, response){
