@@ -201,7 +201,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		if(text && text.trim().length > 1 && text != 'undefined')
 			querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id WHERE Store_Id__c = '" + store + "' AND Barcode__c != null), Dorrbell_Product__c(Id WHERE Store__c = '" + store + "')", limit, offset, order, response);
 		else {
-			var query = getItemSearchQuery("Store__c = '" + store + "'", null, limit, offset);
+			var query = getItemSearchQuery("Store_Id__c = '" + store + "'", null, limit, offset);
 			console.log(query);
 			conn.query(query, function(err, queryData){
 				if(err)
