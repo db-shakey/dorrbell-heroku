@@ -197,7 +197,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		var limit = request.params.limit;
 		var offset = request.params.offset;
 		var order = "ORDER BY Name DESC";
-		if(text && text.trim().length > 1)
+		if(text && text.trim().length > 1 && text != 'undefined')
 			querySearchResults("FIND {*" + text + "*} IN ALL FIELDS RETURNING Variant__c(Id WHERE Store_Id__c = '" + store + "' AND Barcode__c != null), Dorrbell_Product__c(Id WHERE Store__c = '" + store + "')", limit, offset, order, response);
 		else {
 			var query = getItemSearchQuery("Store__c = '" + store + "'", null, limit, offset);
