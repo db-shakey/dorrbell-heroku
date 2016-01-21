@@ -81,7 +81,7 @@ module.exports = function(){
 					var p1r = p1.split("").reverse().join("");		//00100
 					var p2r = p2.split("").reverse().join("");		//00000
 					var p3r = p3.split("").reverse().join("");		//00010
-					
+
 
 					var valid = true;
 					for(var i = 0; i < p1r.length; i++){
@@ -96,7 +96,7 @@ module.exports = function(){
 							valid = (p2r.charAt(i) == "1" && character == character.toUpperCase()) || (p2r.charAt(i) == "0" && character == character.toLowerCase());
 							if(valid == false)
 								break;
-						}	
+						}
 					}
 					if(valid == true){
 						for(var i = 0; i < p3r.length; i++){
@@ -104,12 +104,12 @@ module.exports = function(){
 							valid = (p3r.charAt(i) == "1" && character == character.toUpperCase()) || (p3r.charAt(i) == "0" && character == character.toLowerCase());
 							if(valid == false)
 								break;
-						}	
+						}
 					}
 					return valid;
 				}else
 					return false;
-				
+
 			}
 
 		},
@@ -125,6 +125,8 @@ module.exports = function(){
 			  					RecordType.Name, \
 			  					RecordType.DeveloperName, \
 			  					Store__c, \
+									Mailing_Location__Latitude__s, \
+									Mailing_Location__Longitude__s, \
 			  					(SELECT Id FROM Attachments WHERE Name = 'profile.jpg') \
 			  				FROM Contact WHERE Id = '" + contactId + "'", function(err, data){
 		  			if(err || !data.records)
@@ -134,7 +136,7 @@ module.exports = function(){
 			  	});
 	  		}).then(function(contact){
 	  			if(contact.Attachments && contact.Attachments.records.length > 0){
-	  				
+
 	  				var string = '';
 
 					var base64 = require('base64-stream');
