@@ -1,6 +1,6 @@
 module.exports = function(apiRoutes, conn, utils){
 
-	
+
 
 	apiRoutes.post('/authenticate', function(req, res){
 	  conn.query("SELECT Id, \
@@ -12,6 +12,8 @@ module.exports = function(apiRoutes, conn, utils){
 	  					MobilePhone, \
 	  					RecordType.Name, \
 	  					RecordType.DeveloperName, \
+							Mailing_Location__Latitude__s, \
+							Mailing_Location__Longitude__s, \
 	  					Store__c \
 	  				FROM Contact WHERE Email = '" + req.body.username + "'", function(err, data){
 	    var user = data.records[0];
