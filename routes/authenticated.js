@@ -203,7 +203,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		else {
 			if(store && store.length > 15)
 				store = store.substring(0, 15);
-				
+
 			var query = getItemSearchQuery("Store_Id__c = '" + store + "'", null, limit, offset);
 			console.log(query);
 			conn.query(query, function(err, queryData){
@@ -327,6 +327,32 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 			}
 		})
 	});
+
+	apiRoutes.post("/acceptDelivery", function(request, response){
+		var recordTypes = new Promise(function(resolve, reject){
+			conn.query("SELECT Id, sObjectType, DeveloperName FROM RecordType WHERE DeveloperName = 'Pending' AND sObjectType = 'Dorrbell_Order__c'", function(err, rets){
+				if(err){
+					reject(err);
+				}
+				else
+					resolve(rets);
+			});
+		});
+		recordTypes.then(function(recordTypes){
+			var recordTypeId = (recordTypes.length > 0) ? recordTypes[0].Id : null;
+			conn.sobject("Dorrbell_Order__c").update({
+				Id : request.body.orderId,
+				RecordTypeId : recordTypeId,
+				Status__c : "Accepted",
+				Shopping_Assistant_Contact__c : request.body.contactId
+			}, function(err, result){
+				if(err || !result.success)
+					onError(err, response);
+				else
+					response.status(200).send("Ok");
+			})
+		})
+	})
 
 	apiRoutes.post("/completeOrder", function(request, response){
 
