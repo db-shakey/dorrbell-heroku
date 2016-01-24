@@ -354,6 +354,18 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		})
 	})
 
+	apiRoutes.post("/acceptReturn", function(request, response){
+		conn.sobject("Dorrbell_Order__c").update({
+			Id : request.body.orderId,
+			Return_Shopping_Assistant__c : request.body.contactId
+		}, function(err, result){
+			if(err || !result.success)
+				onError(err, response);
+			else
+				response.status(200).send("Ok");
+		})
+	})
+
 	apiRoutes.post("/completeOrder", function(request, response){
 
 		var recordTypes = new Promise(function(resolve, reject){
