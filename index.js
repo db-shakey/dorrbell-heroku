@@ -10,14 +10,20 @@ var jsforce       = require('jsforce');
 var crypto        = require('crypto');
 var http          = require('http');
 var https         = require('https');
-
+var path          = require('path');
 //Main app
 var app = express();
 
 app.set('port', (process.env.PORT || 5000));
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({
+  verify : function(req, res, buf, encoding){
+    req.headers['x-generated-signature'] = crypto.createHmac('sha256', '5c93443153ae4d621d78b67355df7e41')
+   .update(buf)
+   .digest('base64');
+  }
+}));
 
 var apiRoutes = express.Router();
 var webhooks = express.Router();
@@ -34,6 +40,9 @@ conn.login('shakey@dorrbell.com', 'Seketha3OcPjDdJZZOaB9LEGuQs2lnwwm', function(
 var utils = require('./utils/app-utils')(crypto, jwt);
 
 
+apiRoutes.get('/log', function(req, res){
+  res.sendFile(path.join(__dirname + '/pages/log.html'));
+});
 
 apiRoutes.post('/error', function(req, res){
   conn.sobject('Mobile_Error__c').create([
@@ -51,19 +60,37 @@ apiRoutes.post('/error', function(req, res){
   });
 });
 
-//authenticate requests
-apiRoutes.use(function(req, res, next){
-  if(utils.checkToken(req))
+
+webhooks.use(function(req, res, next){
+  if(utils.verifyWebhook(req))
     next();
-  else{
-    return res.status(403).send({
-      success : false,
-      message : 'Unauthorized Application'
-    });
-  }
-})
+  else
+    res.status(401).send("Invalid Signature");
+});
+
 
 require('./routes/webhooks')(webhooks, conn, utils);
+
+
+
+
+
+/**
+ * All API requests go through apiRoutes
+ */
+ //authenticate requests
+ apiRoutes.use(function(req, res, next){
+   if(utils.checkToken(req))
+     next();
+   else{
+     return res.status(403).send({
+       success : false,
+       message : 'Unauthorized Application'
+     });
+   }
+ })
+
+
 require('./routes/unauthenticated')(apiRoutes, conn, utils);
 
 // route middleware to verify a token
@@ -101,6 +128,12 @@ apiRoutes.use(function(req, res, next) {
 var socketUtils = require('./routes/utils')();
 var authPath = require('./routes/authenticated')(apiRoutes, conn, socketUtils, utils);
 
+
+
+
+/**
+ * Finalize server and setup sockets
+ */
 app.use('/api', apiRoutes);
 app.use('/webhook', webhooks);
 
@@ -114,11 +147,12 @@ io.sockets.on("connection", function(socket){
   socketUtils.addConnection(socket);
 
   socket.on("update", function(data){
-    console.log(data.id + " emitting update " + data);
     io.to(data.id).emit("update", data);
     //socket.broadcast.emit("update", data);
   })
-})
+});
+
+utils.setSocketServer(io);
 
 server.listen(app.get('port'), function(){
   console.log("Dorrbell standard listening on port " + app.get('port'));
@@ -131,6 +165,6 @@ https.createServer({
   ca : fs.readFileSync('./certs/ca.key'),
   requestCert : false,
   rejectUnauthorized : false
-}, app).listen(8443, function(){
-  console.log("Dorrbell secure listening on port 443");
+}, app).listen(8000, function(){
+  console.log("Dorrbell secure listening on port 8000");
 });

@@ -3,6 +3,8 @@ module.exports = function(crypto, jwt){
 	var password = 'd00rb3ll_secret';
 	var algorithm = 'aes-256-ctr';
 	var token = 'Basic am9zaHVhQGRvcnJiZWxsLmNvbTpkMDByYjMxMV9hcHBsaWNhdGlvbg==';
+	var shopify_key = '5c93443153ae4d621d78b67355df7e41';
+	var io;
 
 	return {
 		validateContact : function(contact){
@@ -43,6 +45,19 @@ module.exports = function(crypto, jwt){
 		},
 		getPassword : function(){
 			return password;
+		},
+		setSocketServer : function(socketServer){
+			io = socketServer;
+		},
+
+		verifyWebhook : function(req){
+			return req.headers['x-generated-signature'] == req.headers['x-shopify-hmac-sha256'];
+		},
+
+		log : function(msg){
+			console.log(msg);
+			if(io)
+				io.sockets.emit("log", msg);
 		}
 	}
 
