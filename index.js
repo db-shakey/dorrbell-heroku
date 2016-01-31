@@ -61,6 +61,7 @@ apiRoutes.use(function(req, res, next){
   }
 })
 
+require('./routes/webhooks')(apiRoutes, conn, utils);
 require('./routes/unauthenticated')(apiRoutes, conn, utils);
 
 // route middleware to verify a token
