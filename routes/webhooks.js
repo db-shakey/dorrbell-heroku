@@ -1,8 +1,8 @@
-module.exports = function(apiRoutes, conn, utils){
+module.exports = function(route, conn, utils){
 
 
 
-	apiRoutes.post('/createOrder', function(req, res){
+	route.post('/createOrder', function(req, res){
     console.log(req);
   });
 

@@ -20,6 +20,8 @@ app.use(cors());
 app.use(bodyParser.json());
 
 var apiRoutes = express.Router();
+var webhooks = express.Router();
+
 var conn = new jsforce.Connection();
 var socketServer;
 
@@ -61,7 +63,7 @@ apiRoutes.use(function(req, res, next){
   }
 })
 
-require('./routes/webhooks')(apiRoutes, conn, utils);
+require('./routes/webhooks')(webhooks, conn, utils);
 require('./routes/unauthenticated')(apiRoutes, conn, utils);
 
 // route middleware to verify a token
@@ -100,7 +102,7 @@ var socketUtils = require('./routes/utils')();
 var authPath = require('./routes/authenticated')(apiRoutes, conn, socketUtils, utils);
 
 app.use('/api', apiRoutes);
-
+app.use('/webhook', webhooks);
 
 var server = http.createServer(app);
 var io = require('socket.io')(server,{
