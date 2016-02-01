@@ -28,7 +28,9 @@ app.use(bodyParser.json({
 var apiRoutes = express.Router();
 var webhooks = express.Router();
 
-var conn = new jsforce.Connection();
+var conn = new jsforce.Connection({
+  maxRequest : 50
+});
 var socketServer;
 
 conn.login('shakey@dorrbell.com', 'Seketha3OcPjDdJZZOaB9LEGuQs2lnwwm', function(err, res){
