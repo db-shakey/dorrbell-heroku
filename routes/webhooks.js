@@ -175,7 +175,7 @@ module.exports = function(route, conn, utils){
         Financial_Status__c : order.financial_status,
         Fulfillment_Status__c : order.fulfillment_status,
         Number__c : order.number,
-        Order_Number__c : order.order_number,
+        Name : order.order_number,
         Token__c : order.token,
         Total_Weight__c : order.total_weight,
         Note__c : order.note,
