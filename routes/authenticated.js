@@ -329,33 +329,20 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	});
 
 	apiRoutes.post("/acceptDelivery", function(request, response){
-		var recordTypes = new Promise(function(resolve, reject){
-			conn.query("SELECT Id, sObjectType, DeveloperName FROM RecordType WHERE DeveloperName = 'Pending' AND sObjectType = 'Dorrbell_Order__c'", function(err, rets){
-				if(err){
-					reject(err);
-				}
-				else
-					resolve(rets);
-			});
-		});
-		recordTypes.then(function(recordTypes){
-			var recordTypeId = (recordTypes.length > 0) ? recordTypes[0].Id : null;
-			conn.sobject("Dorrbell_Order__c").update({
-				Id : request.body.orderId,
-				RecordTypeId : recordTypeId,
-				Status__c : "Accepted",
-				Shopping_Assistant_Contact__c : request.body.contactId
-			}, function(err, result){
-				if(err || !result.success)
-					onError(err, response);
-				else
-					response.status(200).send("Ok");
-			})
+		conn.sobject("Order").update({
+			Id : request.body.orderId,
+			Status__c : "Accepted",
+			Delivery_Shopping_Assistant__c : request.body.contactId
+		}, function(err, result){
+			if(err || !result.success)
+				onError(err, response);
+			else
+				response.status(200).send("Ok");
 		})
 	})
 
 	apiRoutes.post("/acceptReturn", function(request, response){
-		conn.sobject("Dorrbell_Order__c").update({
+		conn.sobject("Order").update({
 			Id : request.body.orderId,
 			Return_Shopping_Assistant__c : request.body.contactId
 		}, function(err, result){

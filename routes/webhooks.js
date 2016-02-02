@@ -5,24 +5,8 @@ module.exports = function(route, conn, utils){
       utils.log(err);
       res.status(200).send();
     }
-    utils.log(req.body);
     var product = req.body;
     var route = req.params.route;
-
-
-    //Upsert the main product
-    var mainProduct = new Promise(function(resolve, reject){
-      conn.sobject("Product2").upsert({
-        Body_Html__c : product.body_html,
-        Handle__c : product.handle,
-        Shopify_Id__c : product.id,
-        Family : product.product_type,
-        Publish_Scope__c : product.published_scope,
-        Tags__c : product.tags,
-        Name : product.title,
-        Store__r : {External_Id__c : product.vendor}
-      }, 'Shopify_Id__c', function(err, rets){if(err) reject(err); else resolve(rets);});
-    });
 
     //upsert the images
     var imagePromise = new Promise(function(resolve, reject){
@@ -35,7 +19,26 @@ module.exports = function(route, conn, utils){
           Shopify_Id__c : img.id
         });
       }
-      conn.sobject("Image__c").upsert(imgArray, 'Shopify_Id__c', function(err, rets){if(err) reject(err); else resolve(rets);});
+      conn.sobject("Image__c").upsert(imgArray, 'Shopify_Id__c', function(err, rets){
+        if(err) reject(err);
+        else {
+          var p = {
+            Body_Html__c : product.body_html,
+            Handle__c : product.handle,
+            Shopify_Id__c : product.id,
+            Family : product.product_type,
+            Publish_Scope__c : product.published_scope,
+            Tags__c : product.tags,
+            Name : product.title,
+            Store__r : {External_Id__c : product.vendor},
+            Image__r : {Shopify_Id__c : product.image.id}
+          };
+          utils.log(p);
+          conn.sobject("Product2").upsert(p, 'Shopify_Id__c', function(err, rets){if(err){
+            reject(err);
+          }  else resolve(rets);});
+        }
+      });
     });
 
     //upsert the options
@@ -50,10 +53,12 @@ module.exports = function(route, conn, utils){
           Values__c : option.values.join(", ")
         })
       }
-      conn.sobject("Option__c").upsert(optionArray, 'Shopify_Id__c', function(err, rets){if(err) reject(err); else resolve(rets);});
+      conn.sobject("Option__c").upsert(optionArray, 'Shopify_Id__c', function(err, rets){if(err){
+        reject(err);
+      } else resolve(rets);});
     });
 
-    Promise.all([mainProduct, imagePromise, optionPromise]).then(function(rets){
+    Promise.all([imagePromise, optionPromise]).then(function(rets){
       conn.query("SELECT Id FROM RecordType WHERE (DeveloperName = 'Variant' AND SobjectType = 'Product2')", function(rErr, data){
         var recordTypeId = data.records[0].Id;
         //Upsert the product variants
@@ -76,6 +81,7 @@ module.exports = function(route, conn, utils){
               Weight_Unit__c : v.weight_unit,
               Store__r : {External_Id__c : product.vendor},
               Parent_Product__r : {Shopify_Id__c : v.product_id},
+              Image__r : {Shopify_Id__c : v.image_id},
               RecordTypeId : recordTypeId
             })
           }
@@ -84,22 +90,6 @@ module.exports = function(route, conn, utils){
 
 
         .then(function(){
-          //Upsert the product images
-          var piArray = new Array();
-          piArray.push({
-            Image__r : {Shopify_Id__c : product.image.id},
-            Product__r : {Shopify_Id__c : product.id},
-            Shopify_Id__c : product.image.id + ':' + product.id
-          });
-          for(var i in product.variants){
-            var v = product.variants[i];
-            piArray.push({
-              Image__r : {Shopify_Id__c : v.image_id},
-              Product__r : {Shopify_Id__c : v.id},
-              Shopify_Id__c : v.image_id + ':' + v.id
-            })
-          }
-          conn.sobject("Product_Image__c").upsert(piArray, 'Shopify_Id__c', function(err){if(err) errorHandler(err);});
 
           //Upsert the variant options and price book entries
           var variantArray = new Array();
@@ -229,7 +219,6 @@ module.exports = function(route, conn, utils){
       if(route == 'create'){
         sfOrder.Pricebook2 = {External_Id__c : 'standard'};
       }
-
       conn.sobject("Order").upsert(sfOrder, 'Shopify_Id__c', function(err, ret){
         if(err)
           reject(err);
@@ -255,7 +244,8 @@ module.exports = function(route, conn, utils){
                 Quantity : li.quantity,
                 UnitPrice : li.price,
                 Shopify_Id__c : li.id,
-                Description : li.name
+                Description : li.name,
+                Order_Store__r : {External_Id__c : order.id + ':' + li.vendor}
               };
               if(route == 'create'){
                 orderItem.PricebookEntry = {External_Id__c : li.variant_id + ':standard'};
@@ -272,18 +262,18 @@ module.exports = function(route, conn, utils){
             }
           }
 
-          conn.sobject("OrderItem").upsert(orderProductList, 'Shopify_Id__c', function(err, ret){
-            if(err)
-              utils.log(err);
-            else {
-              res.status(200).send();
-            }
-          });
+
           conn.sobject("Order_Store__c").upsert(orderStoreList, 'External_Id__c', function(err, ret){
-            if(err)
+            if(err && err.name != 'DUPLICATE_VALUE')
               utils.log(err);
             else {
-              res.status(200).send();
+              conn.sobject("OrderItem").upsert(orderProductList, 'Shopify_Id__c', function(err, ret){
+                if(err)
+                  utils.log(err);
+                else {
+                  res.status(200).send();
+                }
+              });
             }
           });
         });
