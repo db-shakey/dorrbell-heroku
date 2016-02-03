@@ -298,7 +298,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	});
 
 	apiRoutes.post("/returnItem", function(request, response){
-		conn.sobject("Delivery_Item__c").update([
+		conn.sobject("OrderItem").update([
 			{Id : request.body.Id, Status__c : "Returning"}
 		], function(err, rets){
 			if(err)
@@ -395,26 +395,26 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	});
 
 	apiRoutes.post("/checkInItem", function(request, response){
-		conn.sobject("Delivery_Item__c").update([
+		conn.sobject("OrderItem").update([
 			{Id : request.body.Id, Status__c : "Checked In"}
 		], function(err, rets){
 			if(err)
 				onError(err, response);
 			else{
-				conn.query("SELECT Id FROM Delivery_Item__c WHERE Status__c = 'Returning' AND Related_Delivery__c = '" + request.body.Related_Delivery__c + "'", function(queryError, data){
+				conn.query("SELECT Id FROM OrderItem WHERE Status__c = 'Returning' AND Order_Store__c = '" + request.body.Order_Store__c + "'", function(queryError, data){
 					if(queryError)
 						onError(queryError, response);
 					else if(!data.records || data.records.length == 0){
-						conn.sobject("Delivery__c").update([
-							{Id : request.body.Related_Delivery__c, Status__c : "Checked In"}
+						conn.sobject("Order_Store__c").update([
+							{Id : request.body.Order_Store__c, Status__c : "Checked In"}
 						], function(err2, rets2){
 							if(err2)
 								onError(err2, response);
 
 							//Check if all items for all orders have been returned
-							conn.query("SELECT Id FROM Delivery_Item__c WHERE Related_Delivery__r.Dorrbell_Order__c = '" + request.body.Related_Delivery__r.Dorrbell_Order__c + "' AND Status__c = 'Returning'", function(err3, data2){
+							conn.query("SELECT Id FROM OrderItem WHERE OrderId = '" + request.body.OrderId + "' AND Status__c = 'Returning'", function(err3, data2){
 								if(!data2.records || data2.records.length == 0)
-									setOrderStatus(request.body.Related_Delivery__r.Dorrbell_Order__c, "All Items Returned to All Retailers", null, null, null, null, null, response);
+									setOrderStatus(request.body.OrderId, "All Items Returned to All Retailers", null, null, null, null, null, response);
 								else
 									response.status(200).send("Ok");
 							});

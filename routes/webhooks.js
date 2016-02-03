@@ -8,6 +8,8 @@ module.exports = function(route, conn, utils){
     var product = req.body;
     var route = req.params.route;
 
+    utils.log(product);
+
     //upsert the images
     var imagePromise = new Promise(function(resolve, reject){
       var imgArray = new Array();
@@ -33,7 +35,6 @@ module.exports = function(route, conn, utils){
             Store__r : {External_Id__c : product.vendor},
             Image__r : {Shopify_Id__c : product.image.id}
           };
-          utils.log(p);
           conn.sobject("Product2").upsert(p, 'Shopify_Id__c', function(err, rets){if(err){
             reject(err);
           }  else resolve(rets);});
@@ -70,12 +71,16 @@ module.exports = function(route, conn, utils){
               Name : v.title,
               Barcode__c : v.barcode,
               Fulfillment_Service__c : v.fulfillment_service,
+              Family : product.product_type,
+              Body_Html__c : product.body_html,
               grams__c : v.grams,
+              Handle__c : product.handle,
               Shopify_Id__c : v.id,
               Inventory_Quantity__c : v.inventory_quantity,
               Old_Inventory_Quantity__c : v.old_inventory_quantity,
               Requires_Shipping__c : v.requires_shipping,
               SKU__c : v.sku,
+              Tags__c : product.tags,
               Taxable__c : v.taxable,
               Weight__c : v.weight,
               Weight_Unit__c : v.weight_unit,
@@ -142,7 +147,6 @@ module.exports = function(route, conn, utils){
     var order = req.body;
     var route = req.params.route;
 
-    utils.log(order);
     new Promise(function(resolve, reject){
       var sfOrder = {
         BillingStreet : order.billing_address.address1,
@@ -211,7 +215,6 @@ module.exports = function(route, conn, utils){
 
             sfOrder.In_Home_Try_On_Start__c = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[6] + ":00");
             sfOrder.In_Home_Try_On_End__c = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[10] + ":00");
-            utils.log(order);
           }
         }
       }
@@ -293,7 +296,6 @@ module.exports = function(route, conn, utils){
     var contact = req.body;
     var defaultAddress = (contact.default_address) ? contact.default_address : {};
 
-    utils.log(req.body);
     if(route == 'delete'){
       conn.sobject("Contact").upsert({
         Shopify_Customer_ID__c : contact.id,
