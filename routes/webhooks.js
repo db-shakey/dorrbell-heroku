@@ -248,12 +248,12 @@ module.exports = function(route, conn, utils){
                 UnitPrice : li.price,
                 Shopify_Id__c : li.id,
                 Description : li.name,
-                Order_Store__r : {External_Id__c : order.id + ':' + li.vendor}
+                Order_Store__r : {External_Id__c : order.id + ':' + li.vendor},
+                Status__c : 'Requested'
               };
-              if(route == 'create'){
-                orderItem.PricebookEntry = {External_Id__c : li.variant_id + ':standard'};
-                orderItem.Order = {Shopify_Id__c : order.id};
-              }
+              orderItem.PricebookEntry = {External_Id__c : li.variant_id + ':standard'};
+              orderItem.Order = {Shopify_Id__c : order.id};
+
               orderProductList.push(orderItem);
 
               //Create the order store
