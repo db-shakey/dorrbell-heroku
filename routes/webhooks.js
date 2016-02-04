@@ -128,10 +128,9 @@ module.exports = function(route, conn, utils){
               IsActive : true,
               External_Id__c : v.id + ':standard'
             }
-            if(route == 'create'){
-              pbe.Product2 = {Shopify_Id__c : v.id};
-              pbe.Pricebook2 = {External_Id__c : 'standard'};
-            }
+            pbe.Product2 = {Shopify_Id__c : v.id};
+            pbe.Pricebook2 = {External_Id__c : 'standard'};
+
             pbeList.push(pbe);
           }
           conn.sobject("PricebookEntry").upsert(pbeList, 'External_Id__c', function(err){if(err) errorHandler(err);});
@@ -251,9 +250,10 @@ module.exports = function(route, conn, utils){
                 Order_Store__r : {External_Id__c : order.id + ':' + li.vendor},
                 Status__c : 'Requested'
               };
-              orderItem.PricebookEntry = {External_Id__c : li.variant_id + ':standard'};
-              orderItem.Order = {Shopify_Id__c : order.id};
-
+              if(route == 'create'){
+                orderItem.PricebookEntry = {External_Id__c : li.variant_id + ':standard'};
+                orderItem.Order = {Shopify_Id__c : order.id};
+              }
               orderProductList.push(orderItem);
 
               //Create the order store
