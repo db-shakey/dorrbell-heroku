@@ -133,7 +133,16 @@ module.exports = function(route, conn, utils){
 
             pbeList.push(pbe);
           }
-          conn.sobject("PricebookEntry").upsert(pbeList, 'External_Id__c', function(err){if(err) errorHandler(err);});
+
+          conn.query("SELECT Id FROM PricebookEntry WHERE Product2.Parent_Product__r.Shopify_Id__c = '" + product.id + "'", function(err, result){
+            var idList = new Array();
+            for(var i in result.records){
+              idList.push(result.records[i].Id);
+            }
+            conn.sobject("PricebookEntry").del(idList, function(err, rets){
+              conn.sobject("PricebookEntry").upsert(pbeList, 'External_Id__c', function(err){if(err) errorHandler(err);});
+            });
+          });
           conn.sobject("Product_Option__c").upsert(variantArray, 'Shopify_Id__c', function(err){if(err) errorHandler(err);});
         });
       });
