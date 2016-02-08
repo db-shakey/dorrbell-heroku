@@ -184,10 +184,10 @@ module.exports = function(route, conn, utils){
           var pbe = {
             UnitPrice : ((metaprice) ? (metaprice / 100) : metaprice),
             IsActive : true,
-            External_Id__c : v.id + ':standard'
+            External_Id__c : v.id + ':standard',
+            Product2 : {Shopify_Id__c : v.id},
+            Pricebook2 : {External_Id__c : 'standard'}
           }
-          pbe.Product2 = {Shopify_Id__c : v.id};
-          pbe.Pricebook2 = {External_Id__c : 'standard'};
 
           pbeList.push(pbe);
         }
@@ -212,6 +212,7 @@ module.exports = function(route, conn, utils){
 	 *************************/
 	route.post('/order/:route', function(req, res){
     var order = req.body;
+    utils.log(order);
     var route = req.params.route;
 
     new Promise(function(resolve, reject){
@@ -311,7 +312,7 @@ module.exports = function(route, conn, utils){
             if(li.variant_id){
               //Create the order item
               var orderItem = {
-                Quantity : li.quantity,
+                Quantity : 1,
                 UnitPrice : li.price,
                 Shopify_Id__c : li.id,
                 Description : li.name,
@@ -322,7 +323,8 @@ module.exports = function(route, conn, utils){
                 orderItem.PricebookEntry = {External_Id__c : li.variant_id + ':standard'};
                 orderItem.Order = {Shopify_Id__c : order.id};
               }
-              orderProductList.push(orderItem);
+              for(var i = 0; i < li.quantity; i++)
+                orderProductList.push(orderItem);
 
               //Create the order store
               orderStoreList.push({
