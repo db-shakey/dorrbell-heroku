@@ -179,8 +179,7 @@ module.exports = function(route, conn, utils){
             return obj.variantId == v.id
           })[0];
 
-          var metaprice = shopify.metaFilter(metaList.metafields.metafields, 'metaprice');
-
+          var metaprice = shopify.metaFilter(metaList.metafields.metafields, 'metalistprice');
           var pbe = {
             UnitPrice : ((metaprice) ? (metaprice / 100) : metaprice),
             IsActive : true,
@@ -192,15 +191,19 @@ module.exports = function(route, conn, utils){
           pbeList.push(pbe);
         }
 
-        conn.query("SELECT Id FROM PricebookEntry WHERE Product2.Parent_Product__r.Shopify_Id__c = '" + product.id + "'", function(err, result){
+        conn.query("SELECT Id, External_Id__c FROM PricebookEntry WHERE Product2.Parent_Product__r.Shopify_Id__c = '" + product.id + "'", function(err, result){
           var idList = new Array();
           for(var i in result.records){
-            idList.push(result.records[i].Id);
+            for(var x in pbeList){
+              if(pbeList[x].External_Id__c == result.records[i].External_Id__c){
+                delete pbeList[x].Product2;
+                delete pbeList[x].Pricebook2;
+              }
+            };
           }
-          conn.sobject("PricebookEntry").del(idList, function(err, rets){
-            conn.sobject("PricebookEntry").upsert(pbeList, 'External_Id__c', function(err){if(err) errorHandler(err);});
-          });
+          conn.sobject("PricebookEntry").upsert(pbeList, 'External_Id__c', function(err){if(err) errorHandler(err);});
         });
+
         conn.sobject("Product_Option__c").upsert(variantArray, 'Shopify_Id__c', function(err){if(err) errorHandler(err);});
       });
     }, errorHandler);
@@ -212,8 +215,8 @@ module.exports = function(route, conn, utils){
 	 *************************/
 	route.post('/order/:route', function(req, res){
     var order = req.body;
-    utils.log(order);
     var route = req.params.route;
+    var shopify = require('./shopify')(utils);
 
     new Promise(function(resolve, reject){
       var sfOrder = {
@@ -291,66 +294,84 @@ module.exports = function(route, conn, utils){
         sfOrder.Pricebook2 = {External_Id__c : 'standard'};
       }
       conn.sobject("Order").upsert(sfOrder, 'Shopify_Id__c', function(err, ret){
-        if(err)
+        if(err){
           reject(err);
-        else
+        }else
           resolve(ret);
       });
     }).then(function(){
       var orderProductList = new Array();
       var orderStoreList = new Array();
+      var metaArray = new Array();
+      for(var i in order.line_items){
+        var li = order.line_items[i];
+        metaArray.push(shopify.getVariantMetafields(li.variant_id));
+      }
 
-      //Delete the existing order deliveries
-      conn.query("SELECT Id FROM Order_Store__c WHERE Order__r.Shopify_Id__c = '" + order.id + "'", function(err, result){
-        var idList = new Array();
-        for(var i in result.records){
-          idList.push(result.records[i].Id);
-        }
-        conn.sobject("Order_Store__c").del(idList, function(err, rets){
-          for(var i in order.line_items){
-            var li = order.line_items[i];
-            if(li.variant_id){
-              //Create the order item
-              var orderItem = {
-                Quantity : 1,
-                UnitPrice : li.price,
-                Shopify_Id__c : li.id,
-                Description : li.name,
-                Order_Store__r : {External_Id__c : order.id + ':' + li.vendor},
-                Status__c : 'Requested'
-              };
-              if(route == 'create'){
-                orderItem.PricebookEntry = {External_Id__c : li.variant_id + ':standard'};
-                orderItem.Order = {Shopify_Id__c : order.id};
-              }
-              for(var i = 0; i < li.quantity; i++)
-                orderProductList.push(orderItem);
+      Promise.all(metaArray).then(function(metadata){
+        for(var i in order.line_items){
+          var li = order.line_items[i];
+          if(li.variant_id){
+            var metaList = metadata.filter(function(obj){
+              return obj.variantId == li.variant_id
+            })[0];
+            var metaprice = shopify.metaFilter(metaList.metafields.metafields, 'metaprice');
+            var orderItem = {
+              Quantity : 1,
+              UnitPrice : ((metaprice) ? (metaprice / 100) : metaprice),
+              Shopify_Id__c : li.id,
+              Description : li.name,
+              Order_Store__r : {External_Id__c : order.id + ':' + li.vendor},
+              Status__c : 'Requested',
+              PricebookEntry : {External_Id__c : li.variant_id + ':standard'},
+              Order : {Shopify_Id__c : order.id}
+            };
+            for(var i = 0; i < li.quantity; i++)
+              orderProductList.push(orderItem);
 
-              //Create the order store
-              orderStoreList.push({
-                Order__r : {Shopify_Id__c : order.id},
-                Store__r : {External_Id__c : li.vendor},
-                External_Id__c : order.id + ':' + li.vendor
-              });
-            }
+            //Create the order store
+            orderStoreList.push({
+              Order__r : {Shopify_Id__c : order.id},
+              Store__r : {External_Id__c : li.vendor},
+              External_Id__c : order.id + ':' + li.vendor
+            });
           }
-
-
-          conn.sobject("Order_Store__c").upsert(orderStoreList, 'External_Id__c', function(err, ret){
-            if(err && err.name != 'DUPLICATE_VALUE')
-              utils.log(err);
-            else {
-              conn.sobject("OrderItem").upsert(orderProductList, 'Shopify_Id__c', function(err, ret){
-                if(err)
-                  utils.log(err);
-                else {
-                  res.status(200).send();
-                }
-              });
-            }
-          });
+        }
+        utils.log(orderProductList);
+        conn.sobject("Order_Store__c").upsert(orderStoreList, 'External_Id__c', function(err, ret){
+          if(err && err.name != 'INVALID_FIELD_FOR_INSERT_UPDATE')
+            utils.log(err);
+          else {
+            conn.sobject("OrderItem").upsert(orderProductList, 'Shopify_Id__c', function(err, ret){
+              res.status(200).send();
+            });
+          }
         });
       });
+
+
+
+      //Populate the transaction information
+      shopify.getTransactionsForOrder(order.id).then(function(results){
+        var tArray = new Array();
+        for(var i in results.transactions){
+          var t = results.transactions[i];
+          tArray.push({
+            Order__r : {Shopify_Id__c : order.id},
+            Amount__c : t.amount,
+            Authorization__c : t.authorization,
+            Currency__c : t.currency,
+            Kind__c : t.kind,
+            Message__c : t.message,
+            Shopify_Id__c : t.id,
+            Status__c : t.status
+          });
+        }
+        conn.sobject("Order_Transaction__c").upsert(tArray, 'Shopify_Id__c', function(err, ret){});
+      })
+
+
+
     }, function(err){
       utils.log(err);
     })

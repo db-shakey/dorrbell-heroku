@@ -57,10 +57,33 @@ module.exports = function(utils){
       var value = metaList.filter(function(obj){
         return obj.key == key;
       });
+      utils.log(value);
       if(value && value.length > 0)
         return value[0].value;
       else
         return null;
+    },
+
+    getTransactionsForOrder : function(orderId){
+      return new Promise(function(resolve, reject){
+        var req = http.get({
+          host : 'homefit.myshopify.com',
+          path : '/admin/orders/' + orderId + '/transactions.json',
+          auth : apiKey + ':' + password
+        }, function(response){
+          var body = '';
+          response.on('data', function(d){
+            body += d;
+          });
+          response.on('end', function(){
+            resolve(JSON.parse(body));
+          });
+          response.on('error', reject);
+        });
+        req.on('error', function(e) {
+          utils.log(e);
+        });
+      })
     }
   }
 };
