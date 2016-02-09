@@ -128,7 +128,6 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 									(Id WHERE Barcode__c != null \
 											AND Parent_Product__c != null \
 											AND Store__c = '" + request.params.store + "' \
-											ORDER BY DISTANCE(Store__r.Coordinates__c, " + geo + ", 'mi') \
 									) \
 									LIMIT " + request.params.limit;
 		conn.search(query, function(err, records){
