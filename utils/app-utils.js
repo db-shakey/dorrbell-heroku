@@ -3,6 +3,7 @@ module.exports = function(crypto, jwt){
 	var password = 'd00rb3ll_secret';
 	var algorithm = 'aes-256-ctr';
 	var token = 'Basic am9zaHVhQGRvcnJiZWxsLmNvbTpkMDByYjMxMV9hcHBsaWNhdGlvbg==';
+	var sfToken = 'BASIC flAuOXUvdyJQZ0ZxJUNMag==';
 	var shopify_key = '5c93443153ae4d621d78b67355df7e41';
 	var io;
 
@@ -25,6 +26,9 @@ module.exports = function(crypto, jwt){
 		},
 		checkToken : function(req){
 			return req.headers['authorization'] == token;
+		},
+		checkSfToken : function(req){
+			return req.headers['authorization'] == sfToken;
 		},
 		encryptText : function(text){
 			var cipher = crypto.createCipher(algorithm,password)

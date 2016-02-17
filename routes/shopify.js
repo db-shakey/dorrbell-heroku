@@ -57,7 +57,6 @@ module.exports = function(utils){
       var value = metaList.filter(function(obj){
         return obj.key == key;
       });
-      utils.log(value);
       if(value && value.length > 0)
         return value[0].value;
       else

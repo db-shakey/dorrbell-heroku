@@ -10,7 +10,7 @@ module.exports = function(route, conn, utils){
       res.status(200).send();
     }
     var product = req.body;
-
+    utils.log(product);
     var route = req.params.route;
     var shopify = require('./shopify')(utils);
 
@@ -53,7 +53,6 @@ module.exports = function(route, conn, utils){
       })
 
       Promise.all([iPromise, mPromise, sPromise]).then(function(results){
-
         var p = {
           Body_Html__c : product.body_html,
           Handle__c : product.handle,
@@ -63,15 +62,20 @@ module.exports = function(route, conn, utils){
           Tags__c : product.tags,
           Name : product.title,
           Brand__c : shopify.metaFilter(results[1].metafields, 'brand'),
+          IsActive : true,
           Store__r : {External_Id__c : product.vendor},
-          Image__r : {Shopify_Id__c : product.image.id}
         };
+        if(product.image)
+          p.Image__r = {Shopify_Id__c : product.image.id};
+
         conn.sobject("Product2").upsert(p, 'Shopify_Id__c', function(err, rets){
           if(err)
             reject(err);
           else
             resolve(rets);
         });
+      }, function(err){
+        utils.log(err);
       });
 
     });
@@ -120,7 +124,7 @@ module.exports = function(route, conn, utils){
         var variantArray = new Array();
         for(var i in product.variants){
           var v = product.variants[i];
-          variantArray.push({
+          var variant = {
             Name : v.title,
             Barcode__c : v.barcode,
             Fulfillment_Service__c : v.fulfillment_service,
@@ -128,6 +132,7 @@ module.exports = function(route, conn, utils){
             Body_Html__c : product.body_html,
             grams__c : v.grams,
             Handle__c : product.handle,
+            IsActive : true,
             Shopify_Id__c : v.id,
             Inventory_Quantity__c : v.inventory_quantity,
             Old_Inventory_Quantity__c : v.old_inventory_quantity,
@@ -139,11 +144,19 @@ module.exports = function(route, conn, utils){
             Weight_Unit__c : v.weight_unit,
             Store__r : {External_Id__c : product.vendor},
             Parent_Product__r : {Shopify_Id__c : v.product_id},
-            Image__r : {Shopify_Id__c : v.image_id},
             RecordTypeId : recordTypeId
-          })
+          }
+
+          if(v.image_id)
+            variant.Image__r = {Shopify_Id__c : v.image_id};
+
+          variantArray.push(variant);
         }
-        conn.sobject("Product2").upsert(variantArray, 'Shopify_Id__c', function(err, rets){if(err) reject(err); else resolve(rets);});
+        conn.sobject("Product2").upsert(variantArray, 'Shopify_Id__c', function(err, rets){
+          if(err)
+            reject(err);
+          else resolve(rets);
+        });
       })
 
 
@@ -246,6 +259,7 @@ module.exports = function(route, conn, utils){
         Shopify_Id__c : order.id,
         Account : {External_Id__c : 'Shopify'},
         Status : 'Draft',
+        Status__c : 'New',
         EffectiveDate : order.created_at,
         Financial_Status__c : order.financial_status,
         Fulfillment_Status__c : order.fulfillment_status,
@@ -254,6 +268,7 @@ module.exports = function(route, conn, utils){
         Token__c : order.token,
         Total_Weight__c : order.total_weight,
         Note__c : order.note,
+        Pricebook2 : {External_Id__c : 'standard'}
       };
       if(order.customer && order.customer.id){
         sfOrder.BillToContact = {Shopify_Customer_ID__c : order.customer.id};
@@ -290,9 +305,6 @@ module.exports = function(route, conn, utils){
         }
       }
 
-      if(route == 'create'){
-        sfOrder.Pricebook2 = {External_Id__c : 'standard'};
-      }
       conn.sobject("Order").upsert(sfOrder, 'Shopify_Id__c', function(err, ret){
         if(err){
           reject(err);
@@ -316,8 +328,9 @@ module.exports = function(route, conn, utils){
               return obj.variantId == li.variant_id
             })[0];
             var metaprice = shopify.metaFilter(metaList.metafields.metafields, 'metaprice');
-            var orderItem = {
-              Quantity : 1,
+
+            orderProductList.push({
+              Quantity : li.quantity,
               UnitPrice : ((metaprice) ? (metaprice / 100) : metaprice),
               Shopify_Id__c : li.id,
               Description : li.name,
@@ -325,25 +338,31 @@ module.exports = function(route, conn, utils){
               Status__c : 'Requested',
               PricebookEntry : {External_Id__c : li.variant_id + ':standard'},
               Order : {Shopify_Id__c : order.id}
-            };
-            for(var i = 0; i < li.quantity; i++)
-              orderProductList.push(orderItem);
+            });
 
             //Create the order store
             orderStoreList.push({
               Order__r : {Shopify_Id__c : order.id},
               Store__r : {External_Id__c : li.vendor},
-              External_Id__c : order.id + ':' + li.vendor
+              External_Id__c : order.id + ':' + li.vendor,
+              Status__c : 'New'
             });
           }
         }
-        utils.log(orderProductList);
         conn.sobject("Order_Store__c").upsert(orderStoreList, 'External_Id__c', function(err, ret){
           if(err && err.name != 'INVALID_FIELD_FOR_INSERT_UPDATE')
             utils.log(err);
           else {
             conn.sobject("OrderItem").upsert(orderProductList, 'Shopify_Id__c', function(err, ret){
-              res.status(200).send();
+              if(err && err.errorCode == 'INVALID_FIELD_FOR_INSERT_UPDATE'){
+                for(var i in orderProductList){
+                  var p = orderProductList[i];
+                  delete p.PricebookEntry;
+                  delete p.Order;
+                }
+                conn.sobject("OrderItem").upsert(orderProductList, 'Shopify_Id__c', function(a,b){res.status(200).send()});
+              }else
+                res.status(200).send();
             });
           }
         });

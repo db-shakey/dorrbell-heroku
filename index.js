@@ -27,6 +27,8 @@ app.use(bodyParser.json({
 
 var apiRoutes = express.Router();
 var webhooks = express.Router();
+var sfRoutes = express.Router();
+
 
 var conn = new jsforce.Connection({
   maxRequest : 50
@@ -62,7 +64,10 @@ apiRoutes.post('/error', function(req, res){
   });
 });
 
-
+/**
+ * All webhook requests go through webhooks
+ */
+ //authenticate requests
 webhooks.use(function(req, res, next){
   if(utils.verifyWebhook(req))
     next();
@@ -74,8 +79,22 @@ webhooks.use(function(req, res, next){
 require('./routes/webhooks')(webhooks, conn, utils);
 
 
-
-
+/**
+ * All salesforce requests go through sf
+ */
+ //authenticate requests
+sfRoutes.use(function(req, res, next){
+  utils.log(req.body);
+  if(utils.checkSfToken(req))
+    next();
+  else{
+    return res.status(403).send({
+      success : false,
+      message : 'Unauthorized Application'
+    });
+  }
+});
+require('./routes/braintree')(sfRoutes, utils);
 
 /**
  * All API requests go through apiRoutes
@@ -91,19 +110,14 @@ require('./routes/webhooks')(webhooks, conn, utils);
      });
    }
  })
-
-
 require('./routes/unauthenticated')(apiRoutes, conn, utils);
 
 // route middleware to verify a token
 apiRoutes.use(function(req, res, next) {
-
   // check header or url parameters or post parameters for token
   var token = req.body.token || req.query.token || req.headers['x-access-token'];
-
   // decode token
   if (token) {
-
     // verifies secret and checks exp
     jwt.verify(token, utils.getPassword(), function(err, decoded) {
       if (err) {
@@ -114,16 +128,13 @@ apiRoutes.use(function(req, res, next) {
         next();
       }
     });
-
   } else {
-
     // if there is no token
     // return an error
     return res.status(403).send({
         success: false,
         message: 'No token provided.'
     });
-
   }
 });
 
@@ -138,6 +149,7 @@ var authPath = require('./routes/authenticated')(apiRoutes, conn, socketUtils, u
  */
 app.use('/api', apiRoutes);
 app.use('/webhook', webhooks);
+app.use('/sf', sfRoutes);
 
 var server = http.createServer(app);
 var io = require('socket.io')(server,{
