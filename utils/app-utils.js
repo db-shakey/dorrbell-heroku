@@ -2,7 +2,7 @@ module.exports = function(crypto, jwt){
 
 	var password = 'd00rb3ll_secret';
 	var algorithm = 'aes-256-ctr';
-	var token = 'Basic am9zaHVhQGRvcnJiZWxsLmNvbTpkMDByYjMxMV9hcHBsaWNhdGlvbg==';
+	var token = 'Basic Z14vbjcyayxOdUpnM0pfXw==';
 	var sfToken = 'BASIC flAuOXUvdyJQZ0ZxJUNMag==';
 	var shopify_key = '5c93443153ae4d621d78b67355df7e41';
 	var io;

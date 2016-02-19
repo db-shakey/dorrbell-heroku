@@ -26,7 +26,7 @@ module.exports = function(utils){
         req.on('error', function(e) {
           utils.log(e);
         });
-      })
+      });
     },
 
     getProductMetafields : function(productId){
@@ -81,6 +81,36 @@ module.exports = function(utils){
         });
         req.on('error', function(e) {
           utils.log(e);
+        });
+      })
+    },
+
+    createCustomer : function(customer){
+      return new Promise(function(resolve, reject){
+
+        var req = require('request');
+        var postData = {
+            "customer" : {
+              "first_name" : customer.FirstName,
+              "last_name" : customer.LastName,
+              "email" : customer.Email,
+              "verified_email" : true,
+              "password" : customer.Password__c,
+              "password_confirmation" : customer.Password__c,
+              "send_email_welcome" : false
+            }
+        };
+
+        utils.log(postData);
+        req({
+          uri : 'https://' + apiKey + ':' + password + '@homefit.myshopify.com/admin/customers.json',
+          method : 'POST',
+          form : postData
+        }, function(err, res, body){
+          if(!err)
+            resolve(body);
+          else
+            reject(err);
         });
       })
     }
