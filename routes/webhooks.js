@@ -193,6 +193,7 @@ module.exports = function(route, conn, utils){
           })[0];
 
           var metaprice = shopify.metaFilter(metaList.metafields.metafields, 'metalistprice');
+          utils.log(metaprice);
           var pbe = {
             UnitPrice : ((metaprice) ? (metaprice / 100) : metaprice),
             IsActive : true,
@@ -216,7 +217,7 @@ module.exports = function(route, conn, utils){
           }
           conn.sobject("PricebookEntry").upsert(pbeList, 'External_Id__c', function(err){if(err) errorHandler(err);});
         });
-
+        utils.log(variantArray);
         conn.sobject("Product_Option__c").upsert(variantArray, 'Shopify_Id__c', function(err){if(err) errorHandler(err);});
       });
     }, errorHandler);

@@ -224,7 +224,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 	apiRoutes.post("/returnItem", function(request, response){
 		conn.sobject("OrderItem").update([
-			{Id : request.body.Id, Status__c : "Returning"}
+			{Id : request.body.Id, Status__c : "Returning", UnitPrice : 0}
 		], function(err, rets){
 			if(err)
 				onError(err, repsonse);
