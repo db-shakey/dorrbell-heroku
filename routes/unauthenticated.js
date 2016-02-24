@@ -136,6 +136,11 @@ module.exports = function(apiRoutes, conn, utils){
 						}
 					}
 				);
+			}, function(err){
+				res.status(400).json({
+					success : false,
+					message : err
+				})
 			});
 		}
 	})
