@@ -192,7 +192,7 @@ module.exports = function(route, conn, utils){
             return obj.variantId == v.id
           })[0];
 
-          var metaprice = shopify.metaFilter(metaList.metafields.metafields, 'metalistprice');
+          var metaprice = shopify.metaFilter(metaList.metafields.metafields, 'metalistpricecurrent');
           utils.log(metaprice);
           var pbe = {
             UnitPrice : ((metaprice) ? (metaprice / 100) : metaprice),
