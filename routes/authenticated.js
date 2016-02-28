@@ -214,6 +214,10 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		setOrderStatus(request.body.orderId, "En Route to Customer", "En Route to Customer", null, response);
 	});
 
+	apiRoutes.post('/startCollectingReturns', function(request, response){
+		setOrderStatus(request.body.orderId, "En Route to Customer", null, null, response);
+	})
+
 	apiRoutes.post('/completeDelivery', function(request, response){
 		conn.sobject("Order").update({
 			Id : request.body.orderId,
