@@ -215,11 +215,11 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	});
 
 	apiRoutes.post('/completeDelivery', function(request, response){
-		setOrderStatus(request.body.orderId, "Delivered To Customer", "With Customer", null, response);
 		conn.sobject("Order").update({
 			Id : request.body.orderId,
 			Marked_Delivered__c : new Date()
 		});
+		setOrderStatus(request.body.orderId, "Delivered To Customer", "With Customer", null, response);
 	});
 
 	apiRoutes.post("/returnItem", function(request, response){
