@@ -317,14 +317,14 @@ module.exports = function(route, conn, utils){
               else if(n.name == "local_delivery_request"){
                 var deliveryTime = n.value.replace(/\s+/g,' ').trim();
                 var sList = deliveryTime.split(" ");
-                if(sList[7] == "PM")
-                  sList[6] = (Number(sList[6].substring(0,1)) + 12) + sList[6].substring(1);
+                if(sList[6] == "PM")
+                  sList[5] = (Number(sList[5].substring(0,sList[5].indexOf(':'))) + 12) + sList[5].substring(sList[5].indexOf(':'));
 
-                if(sList[11] == "PM")
-                  sList[10] = (Number(sList[10].substring(0,1)) + 12) + sList[10].substring(1);
+                if(sList[9] == "PM")
+                  sList[8] = (Number(sList[8].substring(0,sList[8].indexOf(':'))) + 12)  + sList[8].substring(sList[8].indexOf(':'));
 
-                sfOrder.In_Home_Try_On_Start__c = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[6] + ":00");
-                sfOrder.In_Home_Try_On_End__c = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[10] + ":00");
+                sfOrder.In_Home_Try_On_Start__c = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[5] + ":00");
+                sfOrder.In_Home_Try_On_End__c = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[8] + ":00");
               }
             }
           }
