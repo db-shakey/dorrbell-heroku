@@ -315,7 +315,8 @@ module.exports = function(route, conn, utils){
               if(n.name == "request_additional_items")
                 sfOrder.Request_Additional_Items__c = (n.value.toLowerCase() == "yes") ? true : false
               else if(n.name == "local_delivery_request"){
-                var sList =n.value.split(" ");
+                var deliveryTime = n.value.replace(/\s+/g,' ').trim();
+                var sList = deliveryTime.split(" ");
                 if(sList[7] == "PM")
                   sList[6] = (Number(sList[6].substring(0,1)) + 12) + sList[6].substring(1);
 
