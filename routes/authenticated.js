@@ -140,7 +140,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 			if(err)
 				onError(err, response);
 
-			response.json(meta);
+			response.json(meta.fields);
 		})
 	});
 
