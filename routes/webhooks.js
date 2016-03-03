@@ -323,6 +323,7 @@ module.exports = function(route, conn, utils){
                 if(sList[9] == "PM")
                   sList[8] = (Number(sList[8].substring(0,sList[8].indexOf(':'))) + 12)  + sList[8].substring(sList[8].indexOf(':'));
 
+                utils.log(sList);
                 sfOrder.In_Home_Try_On_Start__c = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[5] + ":00");
                 sfOrder.In_Home_Try_On_End__c = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[8] + ":00");
               }
