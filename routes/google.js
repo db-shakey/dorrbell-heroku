@@ -1,6 +1,7 @@
 module.exports = function(utils){
     var key = 'AIzaSyDwQGc8Z6vioP4_7wNBB8ymrhHfj8aMKdo';
-
+    var http = require('https');
+    
     return {
         getTimezoneOffset : function(latitude, longitude, timestamp){
             return new Promise(function(resolve, reject){
@@ -18,6 +19,7 @@ module.exports = function(utils){
                 response.on('error', reject);
               });
               req.on('error', function(e) {
+                reject(e);
                 utils.log(e);
               });
             });
