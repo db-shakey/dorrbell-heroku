@@ -341,7 +341,7 @@ module.exports = function(route, conn, utils){
               }
             }
           }
-          google.getTimezoneOffset(ShippingLatitude, ShippingLongitude).then(function(tz){
+          google.getTimezoneOffset(order.shipping_address.latitude, order.shipping_address.longitude).then(function(tz){
               var offset = tz.rawOffset * -1;
               inHomeTryOnStart.setUTCSeconds(offset);
               inHomeTryOnEnd.setUTCSeconds(offset);
