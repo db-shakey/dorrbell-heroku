@@ -347,8 +347,8 @@ module.exports = function(route, conn, utils){
               inHomeTryOnStart.setUTCSeconds(offset);
               inHomeTryOnEnd.setUTCSeconds(offset);
 
-              sfOrder.In_Home_Try_On_Start__c = (inHomeTryOnStart.getYear() + 1900) + '-' + zeroPad(inHomeTryOnStart.getMonth(), 2) + '-' + zeroPad(inHomeTryOnStart.getDay(), 2) + 'T' + zeroPad(inHomeTryOnStart.getHours(), 2) + ':' + zeroPad(inHomeTryOnStart.getMinutes(), 2) + ':' + zeroPad(inHomeTryOnStart.getSeconds(), 2) + 'Z';
-              sfOrder.In_Home_Try_On_End__c = (inHomeTryOnEnd.getYear() + 1900) + '-' + zeroPad(inHomeTryOnEnd.getMonth(), 2) + '-' + zeroPad(inHomeTryOnEnd.getDay(), 2) + 'T' + zeroPad(inHomeTryOnEnd.getHours(), 2) + ':' + zeroPad(inHomeTryOnEnd.getMinutes(), 2) + ':' + zeroPad(inHomeTryOnEnd.getSeconds(), 2) + 'Z';
+              sfOrder.In_Home_Try_On_Start__c = (inHomeTryOnStart.getYear() + 1900) + '-' + zeroPad(inHomeTryOnStart.getMonth(), 2) + '-' + zeroPad(inHomeTryOnStart.getDay() - 1, 2) + 'T' + zeroPad(inHomeTryOnStart.getHours(), 2) + ':' + zeroPad(inHomeTryOnStart.getMinutes(), 2) + ':' + zeroPad(inHomeTryOnStart.getSeconds(), 2) + 'Z';
+              sfOrder.In_Home_Try_On_End__c = (inHomeTryOnEnd.getYear() + 1900) + '-' + zeroPad(inHomeTryOnEnd.getMonth(), 2) + '-' + zeroPad(inHomeTryOnEnd.getDay() - 1, 2) + 'T' + zeroPad(inHomeTryOnEnd.getHours(), 2) + ':' + zeroPad(inHomeTryOnEnd.getMinutes(), 2) + ':' + zeroPad(inHomeTryOnEnd.getSeconds(), 2) + 'Z';
 
               conn.sobject("Order").upsert(sfOrder, 'Shopify_Id__c', function(err, ret){
                 if(err){
