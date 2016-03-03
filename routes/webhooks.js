@@ -232,6 +232,7 @@ module.exports = function(route, conn, utils){
     utils.log(order);
     var route = req.params.route;
     var shopify = require('./shopify')(utils);
+    var google = require('./google')(utils);
 
     //Upsert customer first
     conn.sobject("Contact").upsert({
@@ -305,10 +306,18 @@ module.exports = function(route, conn, utils){
             sfOrder.CVV_Result_Code__c = order.payment_details.cvv_result_code;
           }
 
+          var zeroPad = zeroPad(num, places) {
+              var zero = places - num.toString().length + 1;
+              return Array(+(zero > 0 && zero)).join("0") + num;
+          }
+          var inHomeTryOnStart;
+          var inHomeTryOnEnd;
           if(order.note_attributes){
             Date.prototype.normalize = function(){
               return new Date(this - this.getTimezoneOffset() * 60000);
             }
+
+
 
             for(var i in order.note_attributes){
               var n = order.note_attributes[i];
@@ -324,18 +333,30 @@ module.exports = function(route, conn, utils){
                   sList[8] = (Number(sList[8].substring(0,sList[8].indexOf(':'))) + 12)  + sList[8].substring(sList[8].indexOf(':'));
 
                 utils.log(sList);
-                sfOrder.In_Home_Try_On_Start__c = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[5] + ":00");
-                sfOrder.In_Home_Try_On_End__c = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[8] + ":00");
+
+                inHomeTryOnStart = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[5] + ":00");
+                inHomeTryOnEnd = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[8] + ":00");
+
+
               }
             }
           }
+          google.getTimezoneOffset(ShippingLatitude, ShippingLongitude).then(function(tz){
+              var offset = tz.rawOffset * -1;
+              inHomeTryOnStart.setUTCSeconds(offset);
+              inHomeTryOnEnd.setUTCSeconds(offset);
 
-          conn.sobject("Order").upsert(sfOrder, 'Shopify_Id__c', function(err, ret){
-            if(err){
-              reject(err);
-            }else
-              resolve(ret);
+              sfOrder.In_Home_Try_On_Start__c = (inHomeTryOnStart.getYear() + 1900) + '-' + zeroPad(inHomeTryOnStart.getMonth(), 2) + '-' + zeroPad(inHomeTryOnStart.getDay(), 2) + 'T' + zeroPad(inHomeTryOnStart.getHours(), 2) + ':' + zeroPad(inHomeTryOnStart.getMinutes(), 2) + ':' + zeroPad(inHomeTryOnStart.getSeconds(), 2) + 'Z';
+              sfOrder.In_Home_Try_On_End__c = (inHomeTryOnEnd.getYear() + 1900) + '-' + zeroPad(inHomeTryOnEnd.getMonth(), 2) + '-' + zeroPad(inHomeTryOnEnd.getDay(), 2) + 'T' + zeroPad(inHomeTryOnEnd.getHours(), 2) + ':' + zeroPad(inHomeTryOnEnd.getMinutes(), 2) + ':' + zeroPad(inHomeTryOnEnd.getSeconds(), 2) + 'Z';
+              
+              conn.sobject("Order").upsert(sfOrder, 'Shopify_Id__c', function(err, ret){
+                if(err){
+                  reject(err);
+                }else
+                  resolve(ret);
+              });
           });
+
         }).then(function(){
           var orderProductList = new Array();
           var orderStoreList = new Array();
