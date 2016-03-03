@@ -4,6 +4,7 @@ module.exports = function(utils){
 
     return {
         getTimezoneOffset : function(latitude, longitude, timestamp){
+            utils.log('/maps/api/timezone/json?key=' + key + '&location=' + latitude + ',' + longitude + '&timestamp=' + new Date().getTime());
             return new Promise(function(resolve, reject){
               var req = http.get({
                 host : 'maps.googleapis.com',
