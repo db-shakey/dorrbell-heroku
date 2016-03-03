@@ -306,7 +306,7 @@ module.exports = function(route, conn, utils){
             sfOrder.CVV_Result_Code__c = order.payment_details.cvv_result_code;
           }
 
-          var zeroPad = zeroPad(num, places) {
+          var zeroPad = function(num, places) {
               var zero = places - num.toString().length + 1;
               return Array(+(zero > 0 && zero)).join("0") + num;
           }
@@ -348,7 +348,7 @@ module.exports = function(route, conn, utils){
 
               sfOrder.In_Home_Try_On_Start__c = (inHomeTryOnStart.getYear() + 1900) + '-' + zeroPad(inHomeTryOnStart.getMonth(), 2) + '-' + zeroPad(inHomeTryOnStart.getDay(), 2) + 'T' + zeroPad(inHomeTryOnStart.getHours(), 2) + ':' + zeroPad(inHomeTryOnStart.getMinutes(), 2) + ':' + zeroPad(inHomeTryOnStart.getSeconds(), 2) + 'Z';
               sfOrder.In_Home_Try_On_End__c = (inHomeTryOnEnd.getYear() + 1900) + '-' + zeroPad(inHomeTryOnEnd.getMonth(), 2) + '-' + zeroPad(inHomeTryOnEnd.getDay(), 2) + 'T' + zeroPad(inHomeTryOnEnd.getHours(), 2) + ':' + zeroPad(inHomeTryOnEnd.getMinutes(), 2) + ':' + zeroPad(inHomeTryOnEnd.getSeconds(), 2) + 'Z';
-              
+
               conn.sobject("Order").upsert(sfOrder, 'Shopify_Id__c', function(err, ret){
                 if(err){
                   reject(err);
