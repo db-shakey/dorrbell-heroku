@@ -6,7 +6,7 @@ module.exports = function(utils){
             return new Promise(function(resolve, reject){
               var req = http.get({
                 host : 'maps.googleapis.com/',
-                path : '/maps/api/timezone/json?key=' + key + '&location=' + latitude + ',' + longitude + '&timestamp=' + new Date().getTime();
+                path : '/maps/api/timezone/json?key=' + key + '&location=' + latitude + ',' + longitude + '&timestamp=' + new Date().getTime()
               }, function(response){
                 var body = '';
                 response.on('data', function(d){
