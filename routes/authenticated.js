@@ -309,7 +309,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 	apiRoutes.post("/completeOrder", function(request, response){
 		var checkedOut = new Promise(function(resolve, reject){
-			conn.query("SELECT Id FROM OrderItem WHERE (Status__c = 'Checked Out' OR Status__c = 'Returning') AND OrderId = '" + request.body.Id + "'", function(err, rets){
+			conn.query("SELECT Id FROM OrderItem WHERE (Status__c = 'Returning') AND OrderId = '" + request.body.Id + "'", function(err, rets){
 				if(err)
 					reject(err);
 				else
