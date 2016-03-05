@@ -315,9 +315,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 				else
 					resolve(rets);
 			});
-		})
-
-		Promise.all([recordTypes, checkedOut]).then(function(results){
+		}).then(function(results){
 			if(results.records && results.records.length > 0)
 				onError("Invalid Items", response);
 			else{
