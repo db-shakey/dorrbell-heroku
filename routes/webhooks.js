@@ -479,7 +479,7 @@ module.exports = function(route, conn, utils){
         FirstName : contact.first_name,
         LastName : contact.last_name,
         Status__c : contact.state,
-        MobilePhone : order.customer.default_address.phone,
+        MobilePhone : defaultAddress.phone,
         HasOptedOutOfEmail : !contact.accepts_marketing,
         Email_Verified__c : contact.verified_email,
         Total_Spent__c : contact.total_spent,
