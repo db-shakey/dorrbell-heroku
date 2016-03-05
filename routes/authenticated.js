@@ -254,7 +254,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 						onError(err2, response);
 					else{
 						conn.sobject("Order").update({
-							Id : request.body.orderId,
+							Id : request.body.Id,
 							Marked_Retrieved__c : new Date()
 						}, function(err, data){
 							if(err)
@@ -308,19 +308,8 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	})
 
 	apiRoutes.post("/completeOrder", function(request, response){
-
-		var recordTypes = new Promise(function(resolve, reject){
-			conn.query("SELECT Id, sObjectType, DeveloperName FROM RecordType WHERE DeveloperName = 'Complete' AND (sObjectType = 'Dorrbell_Order__c' OR sObjectType = 'Delivery__c')", function(err, rets){
-				if(err){
-					reject(err);
-				}
-				else
-					resolve(rets);
-			});
-		})
-
 		var checkedOut = new Promise(function(resolve, reject){
-			conn.query("SELECT Id FROM Delivery_Item__c WHERE Status__c = 'Checked Out' OR Status__c = 'Returning'", function(err, rets){
+			conn.query("SELECT Id FROM OrderItem WHERE Status__c = 'Checked Out' OR Status__c = 'Returning' AND OrderId = '" + request.body.Id + "'", function(err, rets){
 				if(err)
 					reject(err);
 				else
@@ -329,19 +318,11 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		})
 
 		Promise.all([recordTypes, checkedOut]).then(function(results){
-			if(checkedOut.records && checkedOut.records.length > 0)
+			if(results.records && results.records.length > 0)
 				onError("Invalid Items", response);
 			else{
-				var orderRecordTypeId = null;
-				var deliveryRecordTypeId = null;
-				for(var i in results[0].records){
-					if(results[0].records[i].SobjectType == 'Dorrbell_Order__c' && results[0].records[i].DeveloperName == 'Complete')
-						orderRecordTypeId = results[0].records[i].Id;
-					else if(results[0].records[i].SobjectType == 'Delivery__c' && results[0].records[i].DeveloperName == 'Complete')
-						deliveryRecordTypeId = results[0].records[i].Id;
-				}
 				onn.sobject("Order").update({
-					Id : request.body.orderId,
+					Id : request.body.Id,
 					Marked_Completed__c : new Date()
 				}, function(err3, data3){
 					if(err3)
