@@ -319,7 +319,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 			if(results.records && results.records.length > 0)
 				onError("Invalid Items", response);
 			else{
-				onn.sobject("Order").update({
+				conn.sobject("Order").update({
 					Id : request.body.Id,
 					Marked_Completed__c : new Date()
 				}, function(err3, data3){
