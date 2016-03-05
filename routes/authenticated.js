@@ -77,15 +77,20 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 		var orderItemPromise = new Promise(function(resolve, reject){
 			if(itemStatus){
-				conn.query("SELECT Id FROM OrderItem WHERE OrderId = '" + orderId + "'", function(err, rets){
+				conn.query("SELECT Id, Status__c FROM OrderItem WHERE OrderId = '" + orderId + "'", function(err, rets){
 					if(err) reject(err);
 					else{
 						var idArray = new Array();
 						for(var i in rets.records){
-							idArray.push({
+
+							var newItem = {
 								Id : rets.records[i].Id,
 								Status__c : itemStatus
-							});
+							};
+							if(itemStatus == 'Purchased' && rets.records[i].Status__c == 'With Customer'){
+								idArray.push(newItem);
+							}else if(itemStatus != 'Purchased')
+								idArray.push(newItem);
 						}
 						conn.sobject("OrderItem").update(idArray, function(updateError, updateResult){
 							if(updateError) reject(updateError);
@@ -199,13 +204,6 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 			    }
 			}
 			var retsJSON = JSON.stringify(rets);
-			/*
-			if(server)
-				server.clients.forEach(function each(client){
-					client.send(retsJSON);
-				})
-			*/
-
 			response.status(200).send("Ok");
 		})
 	});
@@ -223,7 +221,10 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 			Id : request.body.orderId,
 			Marked_Delivered__c : new Date()
 		}, function(err, data){
-			setOrderStatus(request.body.orderId, "Delivered To Customer", "With Customer", null, response);
+			if(err)
+				onError(err);
+			else
+				setOrderStatus(request.body.orderId, "Delivered To Customer", "With Customer", null, response);
 		});
 
 	});
@@ -240,7 +241,6 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	});
 
 	apiRoutes.post("/startReturns", function(request, response){
-		utils.log(request.body);
 		conn.query("SELECT Id FROM Order_Store__c WHERE Order__c = '" + request.body.Id + "' AND Number_of_Returns__c > 0", function(queryError, data){
 			if(queryError)
 				onError(queryError, response);
@@ -253,7 +253,15 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 					if(err2)
 						onError(err2, response);
 					else{
-						setOrderStatus(request.body.Id, "Retrieved From Customer", null, null, response);
+						conn.sobject("Order").update({
+							Id : request.body.orderId,
+							Marked_Retrieved__c : new Date()
+						}, function(err, data){
+							if(err)
+								onError(err);
+							else
+								setOrderStatus(request.body.Id, "Retrieved From Customer", null, null, response);
+						});
 					}
 				})
 			}
@@ -332,7 +340,15 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 					else if(results[0].records[i].SobjectType == 'Delivery__c' && results[0].records[i].DeveloperName == 'Complete')
 						deliveryRecordTypeId = results[0].records[i].Id;
 				}
-				setOrderStatus(request.body.Id, "Completed", "Complete", "Purchased", response);
+				onn.sobject("Order").update({
+					Id : request.body.orderId,
+					Marked_Completed__c : new Date()
+				}, function(err3, data3){
+					if(err3)
+						onError(err);
+					else
+						setOrderStatus(request.body.Id, "Completed", "Complete", "Purchased", response);
+				});
 			}
 		}, function(errors){
 			onError(errors, response);
@@ -358,9 +374,17 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 							//Check if all items for all orders have been returned
 							conn.query("SELECT Id FROM OrderItem WHERE OrderId = '" + request.body.OrderId + "' AND Status__c = 'Returning'", function(err3, data2){
-								if(!data2.records || data2.records.length == 0)
-									setOrderStatus(request.body.OrderId, "All Items Returned to All Retailers", null, null, response);
-								else
+								if(!data2.records || data2.records.length == 0){
+									conn.sobject("Order").update({
+										Id : request.body.orderId,
+										Marked_Returned__c : new Date()
+									}, function(err3, data3){
+										if(err3)
+											onError(err);
+										else
+											setOrderStatus(request.body.OrderId, "All Items Returned to All Retailers", null, null, response);
+									});
+								}else
 									response.status(200).send("Ok");
 							});
 						});
