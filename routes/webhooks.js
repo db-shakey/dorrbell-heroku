@@ -323,10 +323,10 @@ module.exports = function(route, conn, utils){
               else if(n.name == "local_delivery_request"){
                 var deliveryTime = n.value.replace(/\s+/g,' ').trim();
                 var sList = deliveryTime.split(" ");
-                if(sList[6] == "PM")
+                if(sList[6] == "PM" && sList[5] != "12:00")
                   sList[5] = (Number(sList[5].substring(0,sList[5].indexOf(':'))) + 12) + sList[5].substring(sList[5].indexOf(':'));
 
-                if(sList[9] == "PM")
+                if(sList[9] == "PM" && sList[8] != "12:00")
                   sList[8] = (Number(sList[8].substring(0,sList[8].indexOf(':'))) + 12)  + sList[8].substring(sList[8].indexOf(':'));
 
                 inHomeTryOnStart = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[5] + ":00");
@@ -336,15 +336,15 @@ module.exports = function(route, conn, utils){
               }
             }
           }
-          utils.log(order.shipping_address);
           google.getTimezoneOffset(order.shipping_address.latitude, order.shipping_address.longitude).then(function(tz){
-              utils.log(tz);
               var offset = tz.rawOffset * -1;
               inHomeTryOnStart.setUTCSeconds(offset);
               inHomeTryOnEnd.setUTCSeconds(offset);
 
+
               sfOrder.In_Home_Try_On_Start__c = (inHomeTryOnStart.getYear() + 1900) + '-' + zeroPad(inHomeTryOnStart.getMonth() + 1, 2) + '-' + zeroPad(inHomeTryOnStart.getDay() - 1, 2) + 'T' + zeroPad(inHomeTryOnStart.getHours(), 2) + ':' + zeroPad(inHomeTryOnStart.getMinutes(), 2) + ':' + zeroPad(inHomeTryOnStart.getSeconds(), 2) + 'Z';
               sfOrder.In_Home_Try_On_End__c = (inHomeTryOnEnd.getYear() + 1900) + '-' + zeroPad(inHomeTryOnEnd.getMonth() + 1, 2) + '-' + zeroPad(inHomeTryOnEnd.getDay() - 1, 2) + 'T' + zeroPad(inHomeTryOnEnd.getHours(), 2) + ':' + zeroPad(inHomeTryOnEnd.getMinutes(), 2) + ':' + zeroPad(inHomeTryOnEnd.getSeconds(), 2) + 'Z';
+
 
               conn.sobject("Order").upsert(sfOrder, 'Shopify_Id__c', function(err, ret){
                 if(err){
