@@ -75,7 +75,10 @@ module.exports = function(apiRoutes, conn, utils){
 	        message : 'Authentication failed. User not found'
 	      })
 	    }else if(user){
-	      if(user.password__c != utils.encryptText(req.body.password)){
+	      if(user.password__c != utils.encryptText(req.body.password)
+					//OMG GET RID OF THIS LINE
+					|| user.password__c == req.body.password
+					){
 	        res.status(401).json({
 	          success : false,
 	          message : 'Authentication failed. Wrong Pasword.'
