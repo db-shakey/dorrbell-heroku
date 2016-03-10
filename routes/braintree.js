@@ -10,9 +10,6 @@ module.exports = function(routes, utils){
 	}
 
   routes.use(function(req, res, next){
-    utils.log('checking');
-    utils.log(req.body);
-    utils.log(req.body);
     if(req.body.bt){
       gateway = braintree.connect({
         environment: braintree.Environment.Production,

@@ -109,7 +109,7 @@ module.exports = function(apiRoutes, conn, utils){
 	});
 
 	apiRoutes.post('/registershopify/:contactId', function(req, res){
-		var shopify = require('./shopify')(utils);
+		var shopify = require('../modules/shopify')(utils);
 		var contact = req.body;
 
 		if(!utils.validateContact(contact))
