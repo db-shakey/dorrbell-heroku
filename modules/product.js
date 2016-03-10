@@ -220,8 +220,9 @@ module.exports = function(utils, conn){
           errorHandler(err);
         else{
           for(var i in result.records){
-            result[i].IsActive = false;
+            result.records[i].IsActive = false;
           }
+
           conn.sobject("Product2").update(result.records, function(updateError, updateResult){
             if(updateError)
               errorHandler(updateError);
