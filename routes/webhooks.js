@@ -278,7 +278,7 @@ module.exports = function(route, conn, utils){
             Browser_Height__c : (order.client_details) ? order.client_details.browser_height : null,
             Confirmed__c : order.confirmed,
             Shopify_Id__c : order.id,
-            Account : {External_Id__c : 'Shopify'},
+            Account : {External_Id__c : 'Undefined'},
             Status : 'Draft',
             Status__c : 'New',
             EffectiveDate : order.created_at,
