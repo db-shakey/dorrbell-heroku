@@ -219,7 +219,8 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	apiRoutes.post('/completeDelivery', function(request, response){
 		conn.sobject("Order").update({
 			Id : request.body.orderId,
-			Marked_Delivered__c : new Date()
+			Marked_Delivered__c : new Date(),
+			Return_Collection_Time__c : request.body.returnCollectionTime
 		}, function(err, data){
 			if(err)
 				onError(err);
