@@ -172,7 +172,7 @@ module.exports = function(route, conn, utils){
 
                 orderProductList.push({
                   Quantity : li.quantity,
-                  UnitPrice : ((metaprice) ? (metaprice / 100) : metaprice),
+                  UnitPrice : ((metaprice) ? (metaprice / 100) : '0.00'),
                   Shopify_Id__c : li.id,
                   Description : li.name,
                   Order_Store__r : {External_Id__c : order.id + ':' + li.vendor},
