@@ -1,12 +1,12 @@
 module.exports = function(utils, conn){
   var shopify = require('../modules/shopify')(utils);
-  var errorHandler = function(err){
+  var errorHandler = function(err, res){
     utils.log(err);
     res.status(400).send();
   }
 
   return {
-    upsertProduct : function(product){
+    upsertProduct : function(product, response){
       //upsert the images
       var productPromise = new Promise(function(resolve, reject){
         var iPromise = new Promise(function(iR, iJ){
@@ -207,17 +207,18 @@ module.exports = function(utils, conn){
                 }
               };
             }
-            conn.sobject("PricebookEntry").upsert(pbeList, 'External_Id__c', function(err){if(err) errorHandler(err);});
+            conn.sobject("PricebookEntry").upsert(pbeList, 'External_Id__c', function(err){if(err) errorHandler(err, response);});
           });
-          conn.sobject("Product_Option__c").upsert(variantArray, 'Shopify_Id__c', function(err){if(err) errorHandler(err);});
+          conn.sobject("Product_Option__c").upsert(variantArray, 'Shopify_Id__c', function(err){if(err) errorHandler(err, response);});
         });
       }, errorHandler);
+      response.status(200).send("Ok");
     },
 
-    deleteProduct : function(product){
+    deleteProduct : function(product, response){
       conn.query("SELECT Id FROM Product2 WHERE Shopify_Id__c = '" + product.id + "' OR Parent_Product__r.Shopify_Id__c = '" + product.id + "'", function(err, result){
         if(err)
-          errorHandler(err);
+          errorHandler(err, response);
         else{
           for(var i in result.records){
             result.records[i].IsActive = false;

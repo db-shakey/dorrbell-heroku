@@ -12,9 +12,9 @@ module.exports = function(route, conn, utils){
     var productModule = require('../modules/product')(utils, conn);
 
     if(route == 'update' || route == 'create')
-      productModule.upsertProduct(product);
+      productModule.upsertProduct(product, res);
     else if(route == 'delete')
-      productModule.deleteProduct(product);
+      productModule.deleteProduct(product, res);
     else
       response.status(404).send();
   })
