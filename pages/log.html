@@ -11,6 +11,14 @@
           console.log(data);
         })
       }
+
+      var s = document.URL;
+      if(s.indexOf('https') != -1)
+        s.replace('https', 'wss');
+      if(s.indexOf('http') != -1)
+        s.replace('http', 'ws');
+
+      startLog(s);
     </script>
   </head>
   <body>
