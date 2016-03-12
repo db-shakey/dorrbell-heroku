@@ -13,7 +13,6 @@ var https         = require('https');
 var path          = require('path');
 //Main app
 var app = express();
-var utils = require('./utils/app-utils')(crypto, jwt);
 
 app.set('port', (process.env.PORT || 5000));
 app.use(express.static('public'));
@@ -22,7 +21,6 @@ app.use(express.static('public'));
 app.use(cors());
 app.use(bodyParser.json({
   verify : function(req, res, buf, encoding){
-    utils.log(req);
     req.headers['x-generated-signature'] = crypto.createHmac('sha256', '5c93443153ae4d621d78b67355df7e41')
    .update(buf)
    .digest('base64');
@@ -45,7 +43,7 @@ conn.login('shakey@dorrbell.com', 'Seketha3OcPjDdJZZOaB9LEGuQs2lnwwm', function(
 
 
 
-
+var utils = require('./utils/app-utils')(crypto, jwt);
 
 
 apiRoutes.get('/log', function(req, res){

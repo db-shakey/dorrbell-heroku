@@ -179,7 +179,6 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 				onError(err, response);
 
 			//join rooms based on results
-			console.log(request.body.socketId);
 			if(request.body.socketId){
 				socketUtils.joinRooms(data.records, request.body.socketId);
 			}
