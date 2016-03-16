@@ -129,6 +129,9 @@ module.exports = function(route, conn, utils){
 
                 inHomeTryOnStart = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[5] + ":00");
                 inHomeTryOnEnd = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[8] + ":00");
+
+                sfOrder.Local_Try_On_Start__c = (inHomeTryOnStart.getMonth() + 1) + '/' + inHomeTryOnStart.getDate() + '/' + (inHomeTryOnStart.getYear() + 1900) + ' ' + deliveryTime.split(" ")[5] + ' ' + deliveryTime.split(" ")[6];
+                sfOrder.Local_Try_On_End__c = (inHomeTryOnEnd.getMonth() + 1) + '/' + inHomeTryOnEnd.getDate() + '/' + (inHomeTryOnEnd.getYear() + 1900) + ' ' + deliveryTime.split(" ")[8] + ' ' + deliveryTime.split(" ")[9];
               }
             }
           }
