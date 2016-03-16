@@ -126,16 +126,15 @@ module.exports = function(route, conn, utils){
                 if(sList[9] == "PM" && sList[8] != "12:00")
                   sList[8] = (Number(sList[8].substring(0,sList[8].indexOf(':'))) + 12)  + sList[8].substring(sList[8].indexOf(':'));
 
+
                 inHomeTryOnStart = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[5] + ":00");
                 inHomeTryOnEnd = new Date(sList[1] + " " + sList[2] + ", " + sList[3] + " " + sList[8] + ":00");
-
-
               }
             }
           }
           google.getTimezoneOffset(order.shipping_address.latitude, order.shipping_address.longitude).then(function(tz){
-            utils.log(tz);
-              var offset = tz.rawOffset * -1;
+              var offset = (tz.rawOffset + tz.dstOffset) * -1;
+
               inHomeTryOnStart.setUTCSeconds(offset);
               inHomeTryOnEnd.setUTCSeconds(offset);
 

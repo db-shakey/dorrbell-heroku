@@ -285,8 +285,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		conn.sobject("Order").update({
 			Id : request.body.orderId,
 			Status__c : "Accepted",
-			Marked_Assigned__c : new Date(),
-			Delivery_Shopping_Assistant__c : request.body.contactId
+			Delivery_Accepted_At__c : new Date()
 		}, function(err, result){
 			if(err || !result.success)
 				onError(err, response);
@@ -298,7 +297,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	apiRoutes.post("/acceptReturn", function(request, response){
 		conn.sobject("Order").update({
 			Id : request.body.orderId,
-			Return_Shopping_Assistant__c : request.body.contactId
+			Return_Accepted_At__c : new Date()
 		}, function(err, result){
 			if(err || !result.success)
 				onError(err, response);
