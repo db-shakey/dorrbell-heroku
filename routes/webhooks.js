@@ -24,6 +24,7 @@ module.exports = function(route, conn, utils){
 	 *************************/
 	route.post('/order/:route', function(req, res){
     var order = req.body;
+    utils.log(order);
     var route = req.params.route;
     var shopify = require('../modules/shopify')(utils);
     var google = require('../modules/google')(utils);
@@ -65,6 +66,7 @@ module.exports = function(route, conn, utils){
             ShippingPostalCode : order.shipping_address.zip,
             ShippingLatitude : order.shipping_address.latitude,
             ShippingLongitude : order.shipping_address.longitude,
+            Shipping_Name__c : order.shipping_address.name,
             Browser_IP__c : order.browser_ip,
             Accepts_Marketing__c : order.buyer_accepts_marketing,
             Cart_Token__c : order.cart_token,

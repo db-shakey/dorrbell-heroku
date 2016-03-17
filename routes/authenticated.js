@@ -219,7 +219,8 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		conn.sobject("Order").update({
 			Id : request.body.orderId,
 			Marked_Delivered__c : new Date(),
-			Return_Collection_Time__c : request.body.returnCollectionTime
+			Return_Collection_Time__c : request.body.returnCollectionTime,
+			Return_Shopping_Assistant__c : (request.body.returnUser) ? request.body.returnUser : 'null'
 		}, function(err, data){
 			if(err)
 				onError(err);
