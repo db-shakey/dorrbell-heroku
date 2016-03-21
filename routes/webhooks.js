@@ -24,7 +24,6 @@ module.exports = function(route, conn, utils){
 	 *************************/
 	route.post('/order/:route', function(req, res){
     var order = req.body;
-    utils.log(order);
     var route = req.params.route;
     var shopify = require('../modules/shopify')(utils);
     var google = require('../modules/google')(utils);
@@ -152,6 +151,7 @@ module.exports = function(route, conn, utils){
                   resolve(ret);
               });
           }, function(err){
+            utils.log('in this error');
               utils.log(err);
           });
 
@@ -186,7 +186,7 @@ module.exports = function(route, conn, utils){
                 //Create the order store
                 var contains = false;
                 for(var os in orderStoreList){
-                  if(os.External_Id__c == order.id + ':' + li.vendor)
+                  if(orderStoreList[os].External_Id__c == order.id + ':' + li.vendor)
                     contains = true;
                 }
                 if(!contains){
