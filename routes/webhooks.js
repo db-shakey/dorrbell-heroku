@@ -184,11 +184,18 @@ module.exports = function(route, conn, utils){
                 });
 
                 //Create the order store
-                orderStoreList.push({
-                  Order__r : {Shopify_Id__c : order.id},
-                  Store__r : {External_Id__c : li.vendor},
-                  External_Id__c : order.id + ':' + li.vendor
-                });
+                var contains = false;
+                for(var os in orderStoreList){
+                  if(os.External_Id__c == order.id + ':' + li.vendor)
+                    contains = true;
+                }
+                if(!contains){
+                  orderStoreList.push({
+                    Order__r : {Shopify_Id__c : order.id},
+                    Store__r : {External_Id__c : li.vendor},
+                    External_Id__c : order.id + ':' + li.vendor
+                  });
+                }
               }
             }
             conn.sobject("Order_Store__c").upsert(orderStoreList, 'External_Id__c', function(err, ret){
