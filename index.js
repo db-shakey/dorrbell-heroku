@@ -49,7 +49,20 @@ var utils = require('./utils/app-utils')(crypto, jwt);
  *  Demo route for interview
  */
 apiRoutes.get('/products-sample', function(req, res){
-  conn.query("SELECT Id, Name, SKU__c, Store__r.Name, RecordType.Name, Department__c, Brand__c, Image__r.Image_Source__c, Family, Description FROM Product2 ORDER BY CreatedDate DESC LIMIT 30", function(err, recs){
+  conn.query("SELECT Id, \
+                    Name, \
+                    SKU__c, \
+                    Store__r.Name, \
+                    RecordType.Name, \
+                    Department__c, \
+                    Brand__c, \
+                    Image__r.Image_Source__c, \
+                    Family, \
+                    Description, \
+                    (SELECT Id, Name, SKU__c, Store__r.Name, RecordType.Name, Department__c, Brand__c, Image__r.Image_Source__c, Family, Description FROM Variants__r) \
+                  FROM Product2 \
+                  WHERE RecordType.DeveloperName = 'Product' \
+                  ORDER BY CreatedDate DESC LIMIT 30", function(err, recs){
     if(!err)
       res.status(200).send(recs);
     else
