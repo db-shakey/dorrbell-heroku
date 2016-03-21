@@ -79,7 +79,6 @@ module.exports = function(route, conn, utils){
             Shopify_Id__c : order.id,
             Account : {External_Id__c : 'Undefined'},
             Status : 'Draft',
-            Status__c : 'New',
             EffectiveDate : order.created_at,
             Financial_Status__c : order.financial_status,
             Fulfillment_Status__c : order.fulfillment_status,
@@ -180,7 +179,6 @@ module.exports = function(route, conn, utils){
                   Shopify_Id__c : li.id,
                   Description : li.name,
                   Order_Store__r : {External_Id__c : order.id + ':' + li.vendor},
-                  Status__c : 'Requested',
                   PricebookEntry : {External_Id__c : li.variant_id + ':standard'},
                   Order : {Shopify_Id__c : order.id}
                 });
@@ -189,8 +187,7 @@ module.exports = function(route, conn, utils){
                 orderStoreList.push({
                   Order__r : {Shopify_Id__c : order.id},
                   Store__r : {External_Id__c : li.vendor},
-                  External_Id__c : order.id + ':' + li.vendor,
-                  Status__c : 'New'
+                  External_Id__c : order.id + ':' + li.vendor
                 });
               }
             }
