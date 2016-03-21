@@ -45,6 +45,17 @@ conn.login('shakey@dorrbell.com', 'Seketha3OcPjDdJZZOaB9LEGuQs2lnwwm', function(
 
 var utils = require('./utils/app-utils')(crypto, jwt);
 
+/**
+ *  Demo route for interview
+ */
+apiRoutes.get('/products-sample', function(req, res){
+  conn.query("SELECT Id, Name, SKU__c, Store__r.Name, RecordType.Name, Department__c, Brand__c, Image__r.Image_Source__c, Family, Description FROM Product2 ORDER BY CreatedDate DESC LIMIT 30", function(err, recs){
+    if(!err)
+      res.status(200).send(recs);
+    else
+      res.status(401).send(err);
+  })
+})
 
 apiRoutes.get('/log', function(req, res){
   res.sendFile(path.join(__dirname + '/pages/log.html'));
