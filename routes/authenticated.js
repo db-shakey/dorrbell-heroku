@@ -373,13 +373,14 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 							conn.query("SELECT Id FROM OrderItem WHERE OrderId = '" + request.body.OrderId + "' AND Status__c = 'Returning'", function(err3, data2){
 								if(!data2.records || data2.records.length == 0){
 									conn.sobject("Order").update({
-										Id : request.body.orderId,
+										Id : request.body.OrderId,
 										Marked_Returned__c : new Date()
 									}, function(err3, data3){
 										if(err3)
 											onError(err);
-										else
+										else{
 											setOrderStatus(request.body.OrderId, "All Items Returned to All Retailers", null, null, response);
+										}
 									});
 								}else
 									response.status(200).send("Ok");
