@@ -135,7 +135,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 	apiRoutes.get('/searchProductByBarcode/:barcode/:store', function(request, response){
 		var query = "SELECT Id, Parent_Product__c FROM Product2 WHERE Barcode__c = '" + request.params.barcode + "'";
-		if(request.params.store)
+		if(request.params.store && request.params.store != "undefined")
 			query += " AND Store__c = '" + request.params.store + "'";
 		conn.query(query, function(err, data){
 			if(!err && data)
