@@ -10,8 +10,16 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	}
 
 	var querySearchResults = function(records, limit, text, store, response){
-		var query;
-		var where = (store) ? " Pricebook2.IsStandard = true AND Product2.Store__c = '" + store + "' " : " Pricebook2.IsStandard = true ";
+		var query = "SELECT Id \
+												,Name ProductName \
+												,Image__r.Image_Source__c \
+												,Family \
+												,Store__r.Name \
+												,Brand__c \
+												FROM Product2 WHERE IsActive = true AND RecordType.DeveloperName = 'Product' ";
+		if(store)
+			query += "AND Store__c = '" + store + "'";
+
 		if(records && records.length > 0){
 			var idArray = "(";
 			for(var i in records){
@@ -19,10 +27,10 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 			}
 			idArray = (idArray.indexOf(',') != -1) ? idArray.substring(0, idArray.lastIndexOf(',')) + ')' : idArray + ')';
 
-			query = "SELECT Id, Product2Id, Product2.Name, Product2.Parent_Product__r.Name, Product2.Image__r.Image_Source__c, UnitPrice, Product2.Family FROM PricebookEntry WHERE" + where + "AND Product2Id IN " + idArray;
-		}else if(text == 'undefined'){
-			query = "SELECT Id, Product2Id, Product2.Name, Product2.Parent_Product__r.Name, Product2.Image__r.Image_Source__c, UnitPrice, Product2.Family FROM PricebookEntry WHERE" + where + "LIMIT " + limit;
+			query += " AND Id IN " + idArray;
 		}
+		query += " GROUP BY Store__r.Name, Id, Name, Image__r.Image_Source__c, Family, Brand__c LIMIT " + limit;
+
 		if(query){
 			conn.query(query, function(err, rets){
 				if(err)
@@ -116,8 +124,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		var geo = "GEOLOCATION(" + request.params.latitude + "," + request.params.longitude + ")";
 		var query ="FIND {*" + request.params.searchString + "*} IN ALL FIELDS \
 								RETURNING Product2 \
-									(Id WHERE Barcode__c != null \
-											AND Parent_Product__c != null \
+									(Id WHERE RecordType.DeveloperName = 'Product' \
 											ORDER BY DISTANCE(Store__r.Coordinates__c, " + geo + ", 'mi') \
 									) \
 									LIMIT " + request.params.limit;
@@ -126,12 +133,23 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		});
 	});
 
+	apiRoutes.get('/searchProductByBarcode/:barcode/:store', function(request, response){
+		var query = "SELECT Id, Parent_Product__c FROM Product2 WHERE Barcode__c = '" + request.params.barcode + "'";
+		if(request.params.store)
+			query += " AND Store__c = '" + request.params.store + "'";
+		conn.query(query, function(err, data){
+			if(!err && data)
+				response.status(200).send(data);
+			else
+				onError(err);
+		})
+	});
+
 	apiRoutes.get('/searchStoreItems/:store/:searchString/:limit', function(request, response){
 		var geo = "GEOLOCATION(" + request.params.latitude + "," + request.params.longitude + ")";
 		var query ="FIND {*" + request.params.searchString + "*} IN ALL FIELDS \
 								RETURNING Product2 \
-									(Id WHERE Barcode__c != null \
-											AND Parent_Product__c != null \
+									(Id WHERE RecordType.DeveloperName = 'Product' \
 											AND Store__c = '" + request.params.store + "' \
 									) \
 									LIMIT " + request.params.limit;
