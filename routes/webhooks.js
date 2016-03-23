@@ -30,7 +30,7 @@ module.exports = function(route, conn, utils){
 
     //Upsert customer first
     conn.sobject("Contact").upsert({
-      MailingStreet : order.customer.default_address.address1,
+      MailingStreet : order.customer.default_address.address1 + ' ' + order.customer.default_address.address2,
       MailingCity : order.customer.default_address.city,
       MailingCountry : order.customer.default_address.country_code,
       MailingPostalCode : order.customer.default_address.zip,
@@ -51,14 +51,14 @@ module.exports = function(route, conn, utils){
       else{
         new Promise(function(resolve, reject){
           var sfOrder = {
-            BillingStreet : order.billing_address.address1,
+            BillingStreet : order.billing_address.address1 + ' ' + order.billing_address.address2,
             BillingCity : order.billing_address.city,
             BillingState : order.billing_address.province,
             BillingCountry : order.billing_address.country,
             BillingPostalCode : order.billing_address.zip,
             BillingLatitude : order.billing_address.latitude,
             BillingLongitude : order.billing_address.longitude,
-            ShippingStreet : order.shipping_address.address1,
+            ShippingStreet : order.shipping_address.address1 + ' ' + order.shipping_address.address2,
             ShippingCity : order.shipping_address.city,
             ShippingState : order.shipping_address.province,
             ShippingCountry : order.shipping_address.country,
