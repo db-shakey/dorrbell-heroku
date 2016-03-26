@@ -29,6 +29,7 @@ module.exports = function(utils, conn){
         var mPromise = shopify.getProductMetafields(product.id);
 
         var sPromise = new Promise(function(sR, sJ){
+        utils.log(product);
           conn.query("SELECT Id FROM Store__c WHERE External_Id__c = '" + product.vendor + "'", function(sErr, sData){
             if(sErr || !sData.records || sData.records.length == 0){
               conn.sobject("Store__c").create({
