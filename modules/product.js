@@ -30,7 +30,7 @@ module.exports = function(utils, conn){
 
         var sPromise = new Promise(function(sR, sJ){
         utils.log(product);
-          conn.query("SELECT Id FROM Store__c WHERE External_Id__c = '" + product.vendor.replace(/'/g, "\\'"); + "'", function(sErr, sData){
+          conn.query("SELECT Id FROM Store__c WHERE External_Id__c = '" + product.vendor.replace(/'/g, "\\'") + "'", function(sErr, sData){
             if(sErr || !sData.records || sData.records.length == 0){
               conn.sobject("Store__c").create({
                 Name : product.vendor,
