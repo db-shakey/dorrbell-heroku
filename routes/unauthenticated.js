@@ -66,7 +66,7 @@ module.exports = function(apiRoutes, conn, utils){
 							Mailing_Location__Latitude__s, \
 							Mailing_Location__Longitude__s, \
 	  					Store__c \
-	  				FROM Contact WHERE Email = '" + req.body.username + "'", function(err, data){
+	  				FROM Contact WHERE Username__c = '" + req.body.username + "'", function(err, data){
 	    var user = data.records[0];
 
 	    if(err || !user){
