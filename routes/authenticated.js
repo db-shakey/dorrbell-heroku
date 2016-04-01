@@ -300,7 +300,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		});
 	});
 
-	apiRoutes.post("/acceptDelivery", function(request, response){
+	apiRoutes.post("/acceptOrder", function(request, response){
 		conn.sobject("Order").update({
 			Id : request.body.orderId,
 			Status__c : "Accepted",
