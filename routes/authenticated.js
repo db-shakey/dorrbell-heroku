@@ -402,6 +402,10 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 			Description : pbe.Product2.Name,
 			Order_Store__r : {External_Id__c : orderShopifyId + ':' + pbe.Product2.Store__r.External_Id__c},
 			Status__c : 'Ready For Check Out',
+			Price_Confirmed__c : true,
+			Price_Confirmed_By__c : request.body.ContactId,
+			Item_Confirmed__c : true,
+			Item_Confirmed_By__c : request.body.ContactId,
 			PricebookEntry : {External_Id__c : pbe.Product2.Shopify_Id__c + ':standard'},
 			Order : {Shopify_Id__c : orderShopifyId}
 		};
