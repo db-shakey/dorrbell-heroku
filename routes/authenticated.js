@@ -95,7 +95,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 								Id : rets.records[i].Id,
 								Status__c : itemStatus
 							};
-							if(itemStatus == 'Purchased' && rets.records[i].Status__c == 'With Customer'){
+							if(itemStatus == 'Purchased' && rets.records[i].Status__c == 'Checked Out'){
 								idArray.push(newItem);
 							}else if(itemStatus != 'Purchased')
 								idArray.push(newItem);
