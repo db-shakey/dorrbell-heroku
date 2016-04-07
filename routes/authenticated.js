@@ -386,6 +386,8 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 									response.status(200).send("Ok");
 							});
 						});
+					}else{
+						response.status(200).send("Ok");
 					}
 				});
 			}
