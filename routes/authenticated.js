@@ -146,17 +146,71 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	});
 
 	apiRoutes.get('/searchStoreItems/:store/:searchString/:limit', function(request, response){
-		var geo = "GEOLOCATION(" + request.params.latitude + "," + request.params.longitude + ")";
-		var query ="FIND {*" + request.params.searchString + "*} IN ALL FIELDS \
-								RETURNING Product2 \
-									(Id WHERE RecordType.DeveloperName = 'Product' \
-											AND Store__c = '" + request.params.store + "' \
-									) \
-									LIMIT " + request.params.limit;
-		conn.search(query, function(err, records){
-			querySearchResults(records, request.params.limit, request.params.searchString, request.params.store, response);
-		});
+		var searchString = request.params.searchString.trim();
+		if(searchString.length > 2){
+			var searchQuery ="FIND {*" + request.params.searchString + "*} IN ALL FIELDS \
+									RETURNING Product2 \
+										(Id, Name, Image__r.Image_Source__c, Family, Store__r.Name, Brand__c WHERE RecordType.DeveloperName = 'Product' \
+												AND Store__c = '" + request.params.store + "' \
+												AND RecordType.DeveloperName = 'Product' \
+										) \
+										LIMIT " + request.params.limit;
+
+
+
+			conn.search(searchQuery, function(err, records){
+				if(err)
+					onError(err, response);
+				else
+					response.status(200).send(records);
+			});
+		}else{
+			var query = "SELECT Id, \
+													Name, \
+													Image__r.Image_Source__c, \
+													Family, \
+													Store__r.Name, \
+													Brand__c, \
+													(SELECT Id FROM Variants__r) \
+										FROM Product2 \
+										WHERE Store__c = '" + request.params.store + "' \
+													AND Name LIKE '%" + searchString + "%' \
+													AND RecordType.DeveloperName = 'Product' \
+										ORDER BY Name ASC \
+										LIMIT " + request.params.limit;
+			conn.query(query, function(err, res){
+				if(err)
+					onError(err, response);
+				else if(res.records)
+					response.status(200).send(res.records);
+				else
+					onError('', response);
+			})
+		}
 	});
+
+
+	apiRoutes.get('/searchStores/:searchString/:limit', function(request, response){
+		var searchString = request.params.searchString.trim();
+		if(searchString.length > 2){
+			var query = "FIND {*" + searchString + "*} IN ALL FIELDS RETURNING Store__c(Id, Name, Address__c, Shopping_District__c ORDER BY Name ASC) LIMIT " + request.params.limit;
+			conn.search(query, function(err, res){
+				if(err)
+					onError(err, response);
+				else
+					response.status(200).send(res);
+			});
+		}else{
+			conn.query("SELECT Id, Name, Address__c, Shopping_District__c FROM Store__c WHERE Name LIKE '%" + searchString + "%' ORDER BY Name ASC LIMIT " + request.params.limit, function(err, res){
+				if(err)
+					onError(err, response);
+				else if(res.records)
+					response.status(200).send(res.records);
+				else
+					onError('', response);
+			})
+		}
+	})
 
 	apiRoutes.get('/describe/:sObject', function(request, response){
 		conn.describe(request.params.sObject, function(err, meta){
