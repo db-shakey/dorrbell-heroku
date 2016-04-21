@@ -131,8 +131,8 @@ module.exports = function(utils, conn){
 
             if(v.image_id)
               variant.Image__r = {Shopify_Id__c : v.image_id};
-
-            variantArray.push(variant);
+            if(variant.Shopify_Id__c)
+              variantArray.push(variant);
           }
           utils.log(variantArray, 134);
           return conn.sobject("Product2").upsert(variantArray, 'Shopify_Id__c').then(function(){
