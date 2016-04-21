@@ -6,53 +6,47 @@ module.exports = function(utils, conn){
   }
 
   return {
-    upsertProduct : function(product, response){
-      //upsert the images
-      var productPromise = new Promise(function(resolve, reject){
-        var iPromise = new Promise(function(iR, iJ){
-          var imgArray = new Array();
-          for(var i in product.images){
-            var img = product.images[i];
-            imgArray.push({
-              Image_Source__c : img.src,
-              Position__c : img.position,
-              Shopify_Id__c : img.id
-            });
-          }
-
-          conn.sobject("Image__c").upsert(imgArray, 'Shopify_Id__c', function(err, rets){
-            if(err) iJ(err);
-            else iR(rets);
+    upsertProduct : function(product){
+      var shopify = require('../modules/shopify')(utils);
+      var imgArray = new Array();
+      //Upsert the images
+      for(var i in product.images){
+        var img = product.images[i];
+        if(img.id){
+          imgArray.push({
+            Image_Source__c : img.src,
+            Position__c : img.position,
+            Shopify_Id__c : img.id
           });
-        });
-
-        var mPromise = shopify.getProductMetafields(product.id);
-
-        var sPromise = new Promise(function(sR, sJ){
-        utils.log(product);
-          conn.query("SELECT Id FROM Store__c WHERE External_Id__c = '" + product.vendor.replace(/'/g, "\\'") + "'", function(sErr, sData){
-            if(sErr || !sData.records || sData.records.length == 0){
-              conn.sobject("Store__c").create({
-                Name : product.vendor,
-                External_Id__c : product.vendor
-              }, function(scErr, scRet){
-                if(scErr)
-                  sJ(scErr)
-                else
-                  sR(scRet);
-              });
-            }else
-              sR();
-          })
+        }
+      }
+      var imagePromise = conn.sobject("Image__c").upsert(imgArray, "Shopify_Id__c");
+      var mPromise = shopify.getProductMetafields(product.id);
+      var storePromise = conn.query("SELECT Id FROM Store__c WHERE External_Id__c = '" + product.vendor.replace(/'/g, "\\'") + "'").then(function(sData){
+        return new Promise(function(resolve, reject){
+          if(!sData.records || sData.records.length == 0){
+            conn.sobject("Store__c").create({
+              Name : product.vendor,
+              External_Id__c : product.vendor
+            }, function(scErr, scRet){
+              if(scErr)
+                reject(scErr)
+              else
+                resolve(scRet);
+            });
+          }else
+            resolve();
         })
+      });
 
-        Promise.all([iPromise, mPromise, sPromise]).then(function(results){
+      return Promise.all([imagePromise, mPromise, storePromise]).then(function(results){
           var p = {
             Body_Html__c : product.body_html,
             Handle__c : product.handle,
             Shopify_Id__c : product.id,
             Family : product.product_type,
             Publish_Scope__c : product.published_scope,
+            Published_At__c : product.published_at,
             Tags__c : product.tags,
             Name : product.title,
             Brand__c : shopify.metaFilter(results[1].metafields, 'brand'),
@@ -62,59 +56,49 @@ module.exports = function(utils, conn){
           if(product.image)
             p.Image__r = {Shopify_Id__c : product.image.id};
 
-          conn.sobject("Product2").upsert(p, 'Shopify_Id__c', function(err, rets){
-            if(err)
-              reject(err);
-            else
-              resolve(rets);
+          return conn.sobject("Product2").upsert(p, 'Shopify_Id__c');
+        }).then(function(){
+          //upsert the options
+          var optionPromise = new Promise(function(resolve, reject){
+            var optionArray = new Array();
+
+            for(var i in product.options){
+              var option = product.options[i];
+              if(option && option.values){
+                optionArray.push({
+                  Shopify_Id__c : option.id,
+                  Name : option.name,
+                  Position__c : option.position,
+                  Values__c : option.values.join(", ")
+                })
+              }
+            }
+            conn.sobject("Option__c").upsert(optionArray, 'Shopify_Id__c', function(err, rets){
+              if(err)
+                reject(err);
+              else
+                resolve(rets);
+            });
           });
-        }, function(err){
-          utils.log(err);
-        });
 
-      });
+          var recordTypePromise = new Promise(function(resolve, reject){
+            conn.query("SELECT Id FROM RecordType WHERE (DeveloperName = 'Variant' AND SobjectType = 'Product2')", function(rErr, data){
+              if(rErr)
+                reject(rErr);
+              else
+                resolve(data);
+            });
+          });
+          var variantPromise = new Promise(function(resolve, reject){
+            var variantPromiseList = new Array();
+            for(var i in product.variants){
+              variantPromiseList.push(shopify.getVariantMetafields(product.variants[i].id));
+            }
+            Promise.all(variantPromiseList).then(resolve, reject);
+          });
 
-      //upsert the options
-      var optionPromise = new Promise(function(resolve, reject){
-        var optionArray = new Array();
-        for(var i in product.options){
-          var option = product.options[i];
-          optionArray.push({
-            Shopify_Id__c : option.id,
-            Name : option.name,
-            Position__c : option.position,
-            Values__c : option.values.join(", ")
-          })
-        }
-        conn.sobject("Option__c").upsert(optionArray, 'Shopify_Id__c', function(err, rets){
-          if(err)
-            reject(err);
-          else
-            resolve(rets);
-        });
-      });
-
-      var recordTypePromise = new Promise(function(resolve, reject){
-        conn.query("SELECT Id FROM RecordType WHERE (DeveloperName = 'Variant' AND SobjectType = 'Product2')", function(rErr, data){
-          if(rErr)
-            reject(rErr);
-          else
-            resolve(data);
-        });
-      });
-
-      var variantPromise = new Promise(function(resolve, reject){
-        var variantPromiseList = new Array();
-        for(var i in product.variants){
-          variantPromiseList.push(shopify.getVariantMetafields(product.variants[i].id));
-        }
-        Promise.all(variantPromiseList).then(resolve, reject);
-      });
-
-      Promise.all([productPromise, optionPromise, recordTypePromise, variantPromise]).then(function(rets){
-        var recordTypeId = rets[2].records[0].Id;
-        //Upsert the product variants
-        new Promise(function(resolve, reject){
+          return Promise.all([optionPromise, recordTypePromise, variantPromise]);
+        }).then(function(rets){
           var variantArray = new Array();
           for(var i in product.variants){
             var v = product.variants[i];
@@ -138,7 +122,7 @@ module.exports = function(utils, conn){
               Weight_Unit__c : v.weight_unit,
               Store__r : {External_Id__c : product.vendor},
               Parent_Product__r : {Shopify_Id__c : v.product_id},
-              RecordTypeId : recordTypeId
+              RecordTypeId : rets[1].records[0].Id
             }
 
             if(v.image_id)
@@ -146,93 +130,89 @@ module.exports = function(utils, conn){
 
             variantArray.push(variant);
           }
-          conn.sobject("Product2").upsert(variantArray, 'Shopify_Id__c', function(err, rets){
-            if(err)
-              reject(err);
-            else resolve(rets);
-          });
-        })
-
-
-        .then(function(){
-          //Upsert the variant options and price book entries
-          var variantArray = new Array();
-          var pbeList = new Array();
-
-          for(var i in product.variants){
-            var v = product.variants[i];
-            if(v.option1)
+          return conn.sobject("Product2").upsert(variantArray, 'Shopify_Id__c').then(function(){
+            //Upsert the variant options and price book entries
+            var variantArray = new Array();
+            var pbeList = new Array();
+            for(var i in product.variants){
+              var v = product.variants[i];
+              if(v.option1)
               variantArray.push({
                 Option__r : {Shopify_Id__c : product.options[0].id},
                 Product__r : {Shopify_Id__c : v.id},
                 Shopify_Id__c : product.options[0].id + ':' + v.id,
                 Value__c : v.option1
               });
-            if(v.option2)
+              if(v.option2)
               variantArray.push({
                 Option__r : {Shopify_Id__c : product.options[1].id},
                 Product__r : {Shopify_Id__c : v.id},
                 Shopify_Id__c : product.options[1].id + ':' + v.id,
                 Value__c : v.option2
               });
-            if(v.option3)
+              if(v.option3)
               variantArray.push({
                 Option__r : {Shopify_Id__c : product.options[2].id},
                 Product__r : {Shopify_Id__c : v.id},
                 Shopify_Id__c : product.options[2].id + ':' + v.id,
                 Value__c : v.option3
               });
-            var metaList = rets[3].filter(function(obj){
-              return obj.variantId == v.id
-            })[0];
+              var metaList = rets[2].filter(function(obj){
+                return obj.variantId == v.id
+              })[0];
 
-            var metaprice = shopify.metaFilter(metaList.metafields.metafields, 'metalistpricecurrent');
-            var pbe = {
-              UnitPrice : ((metaprice) ? (metaprice / 100) : metaprice),
-              IsActive : true,
-              External_Id__c : v.id + ':standard',
-              Product2 : {Shopify_Id__c : v.id},
-              Pricebook2 : {External_Id__c : 'standard'}
+              var metaprice = shopify.metaFilter(metaList.metafields.metafields, 'metalistpricecurrent');
+              pbeList.push({
+                UnitPrice : ((metaprice) ? (metaprice / 100) : metaprice),
+                IsActive : true,
+                External_Id__c : v.id + ':standard',
+                Product2 : {Shopify_Id__c : v.id},
+                Pricebook2 : {External_Id__c : 'standard'}
+              });
             }
-
-            pbeList.push(pbe);
-          }
-
-          conn.query("SELECT Id, External_Id__c FROM PricebookEntry WHERE Product2.Parent_Product__r.Shopify_Id__c = '" + product.id + "'", function(err, result){
-            var idList = new Array();
-            for(var i in result.records){
-              for(var x in pbeList){
-                if(pbeList[x].External_Id__c == result.records[i].External_Id__c){
-                  delete pbeList[x].Product2;
-                  delete pbeList[x].Pricebook2;
+            utils.log(pbeList);
+            return conn.query("SELECT Id, External_Id__c FROM PricebookEntry WHERE Product2.Parent_Product__r.Shopify_Id__c = '" + product.id + "'").then(function(result){
+              var updateRecords = new Array();
+              var insertRecords = new Array();
+              for(var x in pbeList.records){
+                var found = false;
+                for(var i in result.records){
+                  if(pbeList[x].External_Id__c == result.records[i].External_Id__c){
+                    delete pbeList[x].Product2;
+                    delete pbeList[x].Pricebook2;
+                    updateRecords.push(pbeList[x]);
+                    found = true;
+                  }
                 }
-              };
-            }
-            conn.sobject("PricebookEntry").upsert(pbeList, 'External_Id__c', function(err){if(err) errorHandler(err, response);});
+                if(!found)
+                  insertRecords.push(pbeList[x]);
+              }
+              return conn.sobject("PricebookEntry").update(updateRecords, 'External_Id__c').then(conn.sobject("PricebookEntry").create(insertRecords));
+            }).then(function(){
+              return new Promise(function(resolve, reject){
+                conn.sobject("Product_Option__c").upsert(variantArray, 'Shopify_Id__c').then(resolve, function(err){
+                  if(err && err.errorCode == "INVALID_FIELD_FOR_INSERT_UPDATE"){
+                    for(var x in variantArray){
+                      delete variantArray[x].Option__r;
+                    }
+                    conn.sobject("Product_Option__c").upsert(variantArray, 'Shopify_Id__c').then(resolve, reject);
+                  }
+                })
+              })
+            });
           });
-          conn.sobject("Product_Option__c").upsert(variantArray, 'Shopify_Id__c', function(err){if(err) errorHandler(err, response);});
         });
-      }, errorHandler);
-      response.status(200).send("Ok");
-    },
+      },
 
-    deleteProduct : function(product, response){
-      conn.query("SELECT Id FROM Product2 WHERE Shopify_Id__c = '" + product.id + "' OR Parent_Product__r.Shopify_Id__c = '" + product.id + "'", function(err, result){
-        if(err)
-          errorHandler(err, response);
-        else{
+    deleteProduct : function(productId){
+      return conn.query("SELECT Id FROM Product2 WHERE Shopify_Id__c = '" + productId + "' OR Parent_Product__r.Shopify_Id__c = '" + productId + "'").then(
+        function(result){
           for(var i in result.records){
             result.records[i].IsActive = false;
           }
-
-          conn.sobject("Product2").update(result.records, function(updateError, updateResult){
-            if(updateError)
-              errorHandler(updateError);
-            else
-              response.status(200).send("Ok");
-          });
+          return conn.sobject("Product2").update(result.records);
         }
-      });
+      );
     }
   }
 

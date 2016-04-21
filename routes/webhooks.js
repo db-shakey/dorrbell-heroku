@@ -5,18 +5,30 @@ module.exports = function(route, conn, utils){
 	 * Product
 	 *************************/
   route.post('/product/:route', function(req, res){
-
-
     var product = req.body;
     var route = req.params.route;
     var productModule = require('../modules/product')(utils, conn);
 
-    if(route == 'update' || route == 'create')
-      productModule.upsertProduct(product, res);
-    else if(route == 'delete')
-      productModule.deleteProduct(product, res);
-    else
+    if(product){
+      if(route == 'update' || route == 'create')
+        productModule.upsertProduct(product).then(function(){
+          response.status(200).send("Ok");
+        }, function(err){
+          utils.log(err);
+          res.status(400).send();
+        });
+      else if(route == 'delete')
+        productModule.deleteProduct(product.Id).then(function(){
+          response.status(200).send("Ok");
+        }, function(err){
+          utils.log(err);
+          res.status(400).send();
+        });
+      else
+        response.status(404).send();
+    }else
       response.status(404).send();
+
   })
 
   /**************************

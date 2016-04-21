@@ -4,6 +4,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	var updated = {};
 
 	var onError = function(err, response){
+		utils.log('----------ERROR------------');
 		utils.log(err);
 		response.status(400);
 		response.send(err);
@@ -122,15 +123,46 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 	apiRoutes.get('/searchAllItems/:searchString/:latitude/:longitude/:limit', function(request, response){
 		var geo = "GEOLOCATION(" + request.params.latitude + "," + request.params.longitude + ")";
-		var query ="FIND {*" + request.params.searchString + "*} IN ALL FIELDS \
-								RETURNING Product2 \
-									(Id WHERE RecordType.DeveloperName = 'Product' \
-											ORDER BY DISTANCE(Store__r.Coordinates__c, " + geo + ", 'mi') \
-									) \
-									LIMIT " + request.params.limit;
-		conn.search(query, function(err, records){
-			querySearchResults(records, request.params.limit, request.params.searchString, null, response);
-		});
+		if(request.params.searchString.length > 2){
+			var query ="FIND {*" + request.params.searchString + "*} IN ALL FIELDS \
+									RETURNING Product2 \
+										(Id, Name, Image__r.Image_Source__c, Family, Store__r.Name, Brand__c WHERE \
+												RecordType.DeveloperName = 'Product' \
+												AND RecordType.DeveloperName = 'Product' \
+												AND IsActive = TRUE \
+												ORDER BY DISTANCE(Store__r.Coordinates__c, " + geo + ", 'mi') \
+										) \
+										LIMIT " + request.params.limit;
+			conn.search(query, function(err, records){
+				if(err)
+					onError(err, response);
+				else
+					response.status(200).send(records);
+			});
+		}else{
+			var query = "SELECT Id, \
+													Name, \
+													Image__r.Image_Source__c, \
+													Family, \
+													Store__r.Name, \
+													Brand__c, \
+													(SELECT Id FROM Variants__r WHERE IsActive = TRUE) \
+										FROM Product2 \
+										WHERE Name LIKE '%" + request.params.searchString + "%' \
+													AND RecordType.DeveloperName = 'Product' \
+													AND IsActive = TRUE \
+										ORDER BY DISTANCE(Store__r.Coordinates__c, " + geo + ", 'mi') \
+										LIMIT " + request.params.limit;
+			conn.query(query, function(err, res){
+				if(err)
+					onError(err, response);
+				else if(res.records)
+					response.status(200).send(res.records);
+				else
+					onError('', response);
+			})
+		}
+
 	});
 
 	apiRoutes.get('/searchProductByBarcode/:barcode/:store', function(request, response){
@@ -150,9 +182,11 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		if(searchString.length > 2){
 			var searchQuery ="FIND {*" + request.params.searchString + "*} IN ALL FIELDS \
 									RETURNING Product2 \
-										(Id, Name, Image__r.Image_Source__c, Family, Store__r.Name, Brand__c WHERE RecordType.DeveloperName = 'Product' \
+										(Id, Name, Image__r.Image_Source__c, Family, Store__r.Name, Brand__c WHERE \
+												RecordType.DeveloperName = 'Product' \
 												AND Store__c = '" + request.params.store + "' \
 												AND RecordType.DeveloperName = 'Product' \
+												AND IsActive = TRUE \
 										) \
 										LIMIT " + request.params.limit;
 
@@ -171,11 +205,12 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 													Family, \
 													Store__r.Name, \
 													Brand__c, \
-													(SELECT Id FROM Variants__r) \
+													(SELECT Id FROM Variants__r WHERE IsActive = TRUE) \
 										FROM Product2 \
 										WHERE Store__c = '" + request.params.store + "' \
 													AND Name LIKE '%" + searchString + "%' \
 													AND RecordType.DeveloperName = 'Product' \
+													AND IsActive = TRUE \
 										ORDER BY Name ASC \
 										LIMIT " + request.params.limit;
 			conn.query(query, function(err, res){
@@ -193,7 +228,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	apiRoutes.get('/searchStores/:searchString/:limit', function(request, response){
 		var searchString = request.params.searchString.trim();
 		if(searchString.length > 2){
-			var query = "FIND {*" + searchString + "*} IN ALL FIELDS RETURNING Store__c(Id, Name, Address__c, Shopping_District__c ORDER BY Name ASC) LIMIT " + request.params.limit;
+			var query = "FIND {*" + searchString + "*} IN ALL FIELDS RETURNING Store__c(Id, Name, Address__c, Shopping_District__c WHERE External_Id__c <> NULL ORDER BY Name ASC) LIMIT " + request.params.limit;
 			conn.search(query, function(err, res){
 				if(err)
 					onError(err, response);
@@ -201,7 +236,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 					response.status(200).send(res);
 			});
 		}else{
-			conn.query("SELECT Id, Name, Address__c, Shopping_District__c FROM Store__c WHERE Name LIKE '%" + searchString + "%' ORDER BY Name ASC LIMIT " + request.params.limit, function(err, res){
+			conn.query("SELECT Id, Name, Address__c, Shopping_District__c FROM Store__c WHERE Name LIKE '%" + searchString + "%' AND External_Id__c <> NULL ORDER BY Name ASC LIMIT " + request.params.limit, function(err, res){
 				if(err)
 					onError(err, response);
 				else if(res.records)
@@ -220,6 +255,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 			response.json(meta.fields);
 		})
 	});
+
 
 	apiRoutes.get("/me", function(request, response){
 		var contactId = request.decoded.Id;
@@ -261,8 +297,6 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 
 	});
-
-
 
 	apiRoutes.post('/update/:sObject', function(request, response){
 		conn.sobject(request.params.sObject).update([
@@ -474,6 +508,64 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 				onError(err, response);
 		});
 	});
+
+
+	/**************************
+	 * Shopify Updates
+	 *************************/
+	apiRoutes.post('/shopify/updateVariant', function(request, response){
+		var shopify = require('../modules/shopify')(utils, conn);
+		shopify.updateVariant(request.body).then(function(){
+			response.status(200).send('Ok');
+		}, function(err){
+			onError(err, response);
+		});
+	})
+
+	apiRoutes.post('/shopify/createVariant', function(request, response){
+		var shopify = require('../modules/shopify')(utils, conn);
+		shopify.createVariant(request.body.productId, request.body.variant).then(function(){
+			response.status(200).send('Ok');
+		}, function(err){
+			onError(err, response);
+		});
+	})
+
+	apiRoutes.post('/shopify/createProduct', function(request, response){
+		var shopify = require('../modules/shopify')(utils, conn);
+		shopify.createProduct(request.body).then(function(res){
+			response.status(200).send(res);
+		}, function(err){
+			onError(err, response);
+		});
+	});
+
+	apiRoutes.post('/shopify/updateProduct', function(request, response){
+		var shopify = require('../modules/shopify')(utils, conn);
+		shopify.updateProduct(request.body).then(function(res){
+			response.status(200).send(res);
+		}, function(err){
+			onError(err, response);
+		});
+	});
+
+
+	apiRoutes.get('/shopify/productTypes', function(request, response){
+		var shopify = require('../modules/shopify')(utils, conn);
+		shopify.getProductTypes().then(function(res){
+			response.status(200).send(res);
+		}, function(err){
+			onError(err, response);
+		});
+	});
+	apiRoutes.post('/shopify/deleteVariant', function(request, response){
+		var shopify = require('../modules/shopify')(utils, conn);
+		shopify.deleteVariant(request.body.productId, request.body.variantId).then(function(res){
+			response.status(200).send(res);
+		}, function(err){
+			onError(err, response);
+		});
+	})
 
 
 	/**************************
