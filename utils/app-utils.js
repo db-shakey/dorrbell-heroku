@@ -58,10 +58,13 @@ module.exports = function(crypto, jwt){
 			return req.headers['x-generated-signature'] == req.headers['x-shopify-hmac-sha256'];
 		},
 
-		log : function(msg){
+		log : function(msg, line){
 			console.log(msg);
-			if(io)
+			if(io){
+				if(line)
+					io.sockets.emit("log", '--------------' + line + '-------------');
 				io.sockets.emit("log", msg);
+			}
 		}
 	}
 
