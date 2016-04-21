@@ -73,6 +73,7 @@ module.exports = function(utils, conn){
                 })
               }
             }
+            utils.log(optionArray);
             conn.sobject("Option__c").upsert(optionArray, 'Shopify_Id__c', function(err, rets){
               if(err)
                 reject(err);
@@ -137,26 +138,26 @@ module.exports = function(utils, conn){
             for(var i in product.variants){
               var v = product.variants[i];
               if(v.option1)
-              variantArray.push({
-                Option__r : {Shopify_Id__c : product.options[0].id},
-                Product__r : {Shopify_Id__c : v.id},
-                Shopify_Id__c : product.options[0].id + ':' + v.id,
-                Value__c : v.option1
-              });
+                variantArray.push({
+                  Option__r : {Shopify_Id__c : product.options[0].id},
+                  Product__r : {Shopify_Id__c : v.id},
+                  Shopify_Id__c : product.options[0].id + ':' + v.id,
+                  Value__c : v.option1
+                });
               if(v.option2)
-              variantArray.push({
-                Option__r : {Shopify_Id__c : product.options[1].id},
-                Product__r : {Shopify_Id__c : v.id},
-                Shopify_Id__c : product.options[1].id + ':' + v.id,
-                Value__c : v.option2
-              });
+                variantArray.push({
+                  Option__r : {Shopify_Id__c : product.options[1].id},
+                  Product__r : {Shopify_Id__c : v.id},
+                  Shopify_Id__c : product.options[1].id + ':' + v.id,
+                  Value__c : v.option2
+                });
               if(v.option3)
-              variantArray.push({
-                Option__r : {Shopify_Id__c : product.options[2].id},
-                Product__r : {Shopify_Id__c : v.id},
-                Shopify_Id__c : product.options[2].id + ':' + v.id,
-                Value__c : v.option3
-              });
+                variantArray.push({
+                  Option__r : {Shopify_Id__c : product.options[2].id},
+                  Product__r : {Shopify_Id__c : v.id},
+                  Shopify_Id__c : product.options[2].id + ':' + v.id,
+                  Value__c : v.option3
+                });
               var metaList = rets[2].filter(function(obj){
                 return obj.variantId == v.id
               })[0];
@@ -195,6 +196,7 @@ module.exports = function(utils, conn){
                     for(var x in variantArray){
                       delete variantArray[x].Option__r;
                     }
+                    utils.log(variantArray);
                     conn.sobject("Product_Option__c").upsert(variantArray, 'Shopify_Id__c').then(resolve, reject);
                   }
                 })
