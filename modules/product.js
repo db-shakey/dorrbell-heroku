@@ -20,13 +20,11 @@ module.exports = function(utils, conn){
           });
         }
       }
-      utils.log(imgArray, 23);
       var imagePromise = conn.sobject("Image__c").upsert(imgArray, "Shopify_Id__c");
       var mPromise = shopify.getProductMetafields(product.id);
       var storePromise = conn.query("SELECT Id FROM Store__c WHERE External_Id__c = '" + product.vendor.replace(/'/g, "\\'") + "'").then(function(sData){
         return new Promise(function(resolve, reject){
           if(!sData.records || sData.records.length == 0){
-            utils.log(product, 28);
             conn.sobject("Store__c").create({
               Name : product.vendor,
               External_Id__c : product.vendor
@@ -58,7 +56,6 @@ module.exports = function(utils, conn){
           if(product.image)
             p.Image__r = {Shopify_Id__c : product.image.id};
 
-          utils.log(p, 59);
           return conn.sobject("Product2").upsert(p, 'Shopify_Id__c');
         }).then(function(){
           //upsert the options
@@ -76,7 +73,6 @@ module.exports = function(utils, conn){
                 })
               }
             }
-            utils.log(optionArray, 76);
             conn.sobject("Option__c").upsert(optionArray, 'Shopify_Id__c', function(err, rets){
               if(err)
                 reject(err);
@@ -134,7 +130,6 @@ module.exports = function(utils, conn){
             if(variant.Shopify_Id__c)
               variantArray.push(variant);
           }
-          utils.log(variantArray, 134);
           return conn.sobject("Product2").upsert(variantArray, 'Shopify_Id__c').then(function(){
             //Upsert the variant options and price book entries
             var variantArray = new Array();
@@ -175,7 +170,6 @@ module.exports = function(utils, conn){
                 Pricebook2 : {External_Id__c : 'standard'}
               });
             }
-            utils.log(pbeList, 174);
             return conn.query("SELECT Id, External_Id__c FROM PricebookEntry WHERE Product2.Parent_Product__r.Shopify_Id__c = '" + product.id + "'").then(function(result){
               var updateRecords = new Array();
               var insertRecords = new Array();
@@ -195,13 +189,11 @@ module.exports = function(utils, conn){
               return conn.sobject("PricebookEntry").update(updateRecords, 'External_Id__c').then(conn.sobject("PricebookEntry").create(insertRecords));
             }).then(function(){
               return new Promise(function(resolve, reject){
-                utils.log(variantArray, 194);
                 conn.sobject("Product_Option__c").upsert(variantArray, 'Shopify_Id__c').then(resolve, function(err){
                   if(err && err.errorCode == "INVALID_FIELD_FOR_INSERT_UPDATE"){
                     for(var x in variantArray){
                       delete variantArray[x].Option__r;
                     }
-                    utils.log(variantArray, 200);
                     conn.sobject("Product_Option__c").upsert(variantArray, 'Shopify_Id__c').then(resolve, reject);
                   }
                 })
