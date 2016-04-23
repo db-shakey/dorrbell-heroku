@@ -7,6 +7,7 @@ module.exports = function(utils, conn){
 
   return {
     upsertProduct : function(product){
+      utils.log(product);
       var shopify = require('../modules/shopify')(utils);
       var imgArray = new Array();
       //Upsert the images
