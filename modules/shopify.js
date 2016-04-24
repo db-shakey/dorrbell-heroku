@@ -16,10 +16,7 @@ module.exports = function(utils, conn){
             body += d;
           });
           response.on('end', function(){
-            resolve({
-              variantId : variantId,
-              metafields : JSON.parse(body)
-            });
+            resolve(JSON.parse(body));
           });
           response.on('error', reject);
         });

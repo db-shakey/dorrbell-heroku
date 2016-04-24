@@ -183,7 +183,7 @@ module.exports = function(route, conn, utils){
                 var metaList = metadata.filter(function(obj){
                   return obj.variantId == li.variant_id
                 })[0];
-                var metaprice = shopify.metaFilter(metaList.metafields.metafields, 'metaprice');
+                var metaprice = shopify.metaFilter(metaList.metafields, 'metaprice');
 
                 orderProductList.push({
                   Quantity : li.quantity,
