@@ -30,10 +30,27 @@ module.exports = function(route, conn, utils){
       response.status(404).send();
 
   })
+  route.post('/order/:route', function(req, res){
+    var order = req.body;
+    var route = req.params.route;
+    var orderModule = require('../modules/order')(utils, conn);
 
+    if(order){
+        if(route == 'create' || route == 'update'){
+            orderModule.upsertOrder(order).then(function(){
+                response.status(200).send("Ok");
+            }, function(err){
+                utils.log(err);
+                res.status(400).send();
+            })
+        }
+    }else
+        response.status(404).send();
+  })
   /**************************
 	 * Order
 	 *************************/
+    /*
 	route.post('/order/:route', function(req, res){
     var order = req.body;
     var route = req.params.route;
@@ -259,7 +276,7 @@ module.exports = function(route, conn, utils){
     });
     res.status(200).send();
   });
-
+  */
 
   /**************************
 	 * Customer
