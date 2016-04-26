@@ -34,7 +34,9 @@ module.exports = function(route, conn, utils){
     var order = req.body;
     var route = req.params.route;
     var orderModule = require('../modules/order')(utils, conn);
-
+    utils.log('in order');
+    utils.log(order);
+    utils.log(route);
     if(order){
         if(route == 'create' || route == 'update'){
             orderModule.upsertOrder(order).then(function(){

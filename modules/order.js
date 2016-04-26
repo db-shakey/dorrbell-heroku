@@ -7,8 +7,8 @@ module.exports = function(utils, conn){
   }
 
   return {
-    upsertOrder : function(product){
-        utils.log(product);
+    upsertOrder : function(order){
+        utils.log(order);
         return conn.apex.post('/Order/', body);
     },
 
