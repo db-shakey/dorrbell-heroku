@@ -79,7 +79,7 @@ module.exports = function(utils, conn){
 
     },
 
-    deleteProduct : function(productId){
+    deleteOrder : function(productId){
 
     }
   }
