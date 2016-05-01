@@ -174,7 +174,6 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 	apiRoutes.get('/searchStores/:searchString/:limit', function(request, response){
 		var searchString = request.params.searchString.trim();
-
 		var wherePromise = new Promise(function(resolve, reject){
 			var whereClause = "Name LIKE '%" + searchString + "%'";
 			if(searchString.length > 2){
@@ -196,7 +195,6 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 				resolve(whereClause);
 			}
 		}).then(function(whereClause){
-
 			var query = "SELECT Id, Name, Address__c, Shopping_District__c FROM Store__c WHERE " + whereClause + " AND External_Id__c <> NULL ORDER BY Name ASC";
 			pagination(conn.query(query), request.params.limit).then(function(res){
 				response.status(200).send(res);
