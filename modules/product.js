@@ -20,7 +20,6 @@ module.exports = function(utils, conn){
           metadata : res,
           product : product
         }
-        utils.log(body);
         return conn.apex.post('/Product/', body);
       });
 

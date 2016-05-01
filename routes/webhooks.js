@@ -23,7 +23,7 @@ module.exports = function(route, conn, utils){
           utils.log(err);
         });
     }
-    response.status(200).send("Ok");
+    res.status(200).send();
   })
 
   /**************************
@@ -42,7 +42,7 @@ module.exports = function(route, conn, utils){
         })
       }
     }
-    res.status(200).send("Ok");
+    res.status(200).send();
   });
 
 

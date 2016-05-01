@@ -10,41 +10,6 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		response.send(err);
 	}
 
-	var querySearchResults = function(records, limit, text, store, response){
-		var query = "SELECT Id \
-												,Name ProductName \
-												,Image__r.Image_Source__c \
-												,Family \
-												,Store__r.Name \
-												,Brand__c \
-												FROM Product2 WHERE IsActive = true AND RecordType.DeveloperName = 'Product' ";
-		if(store)
-			query += "AND Store__c = '" + store + "'";
-
-		if(records && records.length > 0){
-			var idArray = "(";
-			for(var i in records){
-				idArray += "'" + records[i].Id + "',";
-			}
-			idArray = (idArray.indexOf(',') != -1) ? idArray.substring(0, idArray.lastIndexOf(',')) + ')' : idArray + ')';
-
-			query += " AND Id IN " + idArray;
-		}
-		query += " GROUP BY Store__r.Name, Id, Name, Image__r.Image_Source__c, Family, Brand__c LIMIT " + limit;
-
-		if(query){
-			conn.query(query, function(err, rets){
-				if(err)
-					onError(err, response);
-				else
-					response.json(rets.records);
-			});
-		}else{
-			response.json([]);
-		}
-
-	}
-
 
 	var setOrderStatus = function(orderId, orderStatus, deliveryStatus, itemStatus, response){
 		var orderPromise = new Promise(function(resolve, reject){
@@ -115,31 +80,64 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		}, onError);
 	}
 
-
+	var pagination = function(action, lim){
+		var p = new Promise(function(resolve, reject){
+			var records = [];
+			action.on("record", function(record) {
+				records.push(record);
+			})
+			.on("end", function() {
+				resolve({
+					records : records,
+					hasMore : (action.totalFetched < action.totalSize)
+				});
+			})
+			.on("error", function(err) {
+				reject(err);
+			})
+			.run({ autoFetch : true, maxFetch : lim });
+		});
+		return p;
+	}
 
 	apiRoutes.get('/ping', function(request, response){
 		response.send('valid_token');
 	});
 
-	apiRoutes.get('/searchAllItems/:searchString/:latitude/:longitude/:limit', function(request, response){
-		var geo = "GEOLOCATION(" + request.params.latitude + "," + request.params.longitude + ")";
-		if(request.params.searchString.length > 2){
-			var query ="FIND {*" + request.params.searchString + "*} IN ALL FIELDS \
-									RETURNING Product2 \
-										(Id, Name, Image__r.Image_Source__c, Family, Store__r.Name, Brand__c WHERE \
-												RecordType.DeveloperName = 'Product' \
-												AND RecordType.DeveloperName = 'Product' \
-												AND IsActive = TRUE \
-												ORDER BY DISTANCE(Store__r.Coordinates__c, " + geo + ", 'mi') \
-										) \
-										LIMIT " + request.params.limit;
-			conn.search(query, function(err, records){
-				if(err)
-					onError(err, response);
-				else
-					response.status(200).send(records);
-			});
-		}else{
+	apiRoutes.get('/searchAllItems/:searchString/:store/:limit', function(request, response){
+
+		var wherePromise = new Promise(function(resolve, reject){
+			var whereClause = "Name LIKE '%" + request.params.searchString.trim() + "%'";
+
+			if(request.params.searchString.length > 2){
+				var query ="FIND {*" + request.params.searchString + "*} IN ALL FIELDS \
+										RETURNING Product2 \
+											(Id WHERE \
+													RecordType.DeveloperName = 'Product' \
+													AND IsActive = TRUE \
+													ORDER BY Family ASC \
+											)";
+
+				conn.search(query, function(err, res){
+					if(!err && res && res.length > 0){
+						whereClause = "Id IN ("
+						for(var i in res){
+							whereClause += "'" + res[i].Id + "', "
+						}
+						whereClause = whereClause.substring(0, whereClause.lastIndexOf(', ')) + ')';
+						resolve(whereClause);
+					}else if(res.length == 0){
+						resolve(whereClause);
+					}else
+						reject(err);
+				});
+			}else{
+				resolve(whereClause);
+			}
+		});
+		wherePromise.then(function(whereClause){
+			if(request.params.store && request.params.store.trim().length > 0)
+				whereClause += " AND Store__c = '" + request.params.store + "'";
 			var query = "SELECT Id, \
 													Name, \
 													Image__r.Image_Source__c, \
@@ -148,27 +146,23 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 													Brand__c, \
 													(SELECT Id FROM Variants__r WHERE IsActive = TRUE) \
 										FROM Product2 \
-										WHERE Name LIKE '%" + request.params.searchString + "%' \
+										WHERE  " + whereClause + " \
 													AND RecordType.DeveloperName = 'Product' \
 													AND IsActive = TRUE \
-										ORDER BY DISTANCE(Store__r.Coordinates__c, " + geo + ", 'mi') \
-										LIMIT " + request.params.limit;
-			conn.query(query, function(err, res){
-				if(err)
-					onError(err, response);
-				else if(res.records)
-					response.status(200).send(res.records);
-				else
-					onError('', response);
-			})
-		}
-
+									ORDER BY Family ASC";
+			pagination(conn.query(query), request.params.limit).then(function(res){
+				response.status(200).send(res);
+			}, function(err){
+				onError(err, response);
+			});
+		});
 	});
 
 	apiRoutes.get('/searchProductByBarcode/:barcode/:store', function(request, response){
 		var query = "SELECT Id, Parent_Product__c FROM Product2 WHERE Barcode__c = '" + request.params.barcode + "'";
 		if(request.params.store && request.params.store != "undefined")
 			query += " AND Store__c = '" + request.params.store + "'";
+
 		conn.query(query, function(err, data){
 			if(!err && data)
 				response.status(200).send(data);
@@ -177,74 +171,39 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		})
 	});
 
-	apiRoutes.get('/searchStoreItems/:store/:searchString/:limit', function(request, response){
-		var searchString = request.params.searchString.trim();
-		if(searchString.length > 2){
-			var searchQuery ="FIND {*" + request.params.searchString + "*} IN ALL FIELDS \
-									RETURNING Product2 \
-										(Id, Name, Image__r.Image_Source__c, Family, Store__r.Name, Brand__c WHERE \
-												RecordType.DeveloperName = 'Product' \
-												AND Store__c = '" + request.params.store + "' \
-												AND RecordType.DeveloperName = 'Product' \
-												AND IsActive = TRUE \
-										) \
-										LIMIT " + request.params.limit;
-
-
-
-			conn.search(searchQuery, function(err, records){
-				if(err)
-					onError(err, response);
-				else
-					response.status(200).send(records);
-			});
-		}else{
-			var query = "SELECT Id, \
-													Name, \
-													Image__r.Image_Source__c, \
-													Family, \
-													Store__r.Name, \
-													Brand__c, \
-													(SELECT Id FROM Variants__r WHERE IsActive = TRUE) \
-										FROM Product2 \
-										WHERE Store__c = '" + request.params.store + "' \
-													AND Name LIKE '%" + searchString + "%' \
-													AND RecordType.DeveloperName = 'Product' \
-													AND IsActive = TRUE \
-										ORDER BY Name ASC \
-										LIMIT " + request.params.limit;
-			conn.query(query, function(err, res){
-				if(err)
-					onError(err, response);
-				else if(res.records)
-					response.status(200).send(res.records);
-				else
-					onError('', response);
-			})
-		}
-	});
-
 
 	apiRoutes.get('/searchStores/:searchString/:limit', function(request, response){
 		var searchString = request.params.searchString.trim();
-		if(searchString.length > 2){
-			var query = "FIND {*" + searchString + "*} IN ALL FIELDS RETURNING Store__c(Id, Name, Address__c, Shopping_District__c WHERE External_Id__c <> NULL ORDER BY Name ASC) LIMIT " + request.params.limit;
-			conn.search(query, function(err, res){
-				if(err)
-					onError(err, response);
-				else
-					response.status(200).send(res);
+
+		var wherePromise = new Promise(function(resolve, reject){
+			var whereClause = "Name LIKE '%" + searchString + "%'";
+			if(searchString.length > 2){
+				var query = "FIND {*" + searchString + "*} IN ALL FIELDS RETURNING Store__c(Id WHERE External_Id__c <> NULL ORDER BY Name ASC)";
+				conn.search(query, function(err, res){
+					if(!err && res && res.length > 0){
+						whereClause = "Id IN ("
+						for(var i in res){
+							whereClause += "'" + res[i].Id + "', "
+						}
+						whereClause = whereClause.substring(0, whereClause.lastIndexOf(', ')) + ')';
+						resolve(whereClause);
+					}else if(res.length == 0){
+						resolve(whereClause);
+					}else
+						reject(err);
+				});
+			}else{
+				resolve(whereClause);
+			}
+		}).then(function(whereClause){
+
+			var query = "SELECT Id, Name, Address__c, Shopping_District__c FROM Store__c WHERE " + whereClause + " AND External_Id__c <> NULL ORDER BY Name ASC";
+			pagination(conn.query(query), request.params.limit).then(function(res){
+				response.status(200).send(res);
+			}, function(err){
+				onError(err, response);
 			});
-		}else{
-			conn.query("SELECT Id, Name, Address__c, Shopping_District__c FROM Store__c WHERE Name LIKE '%" + searchString + "%' AND External_Id__c <> NULL ORDER BY Name ASC LIMIT " + request.params.limit, function(err, res){
-				if(err)
-					onError(err, response);
-				else if(res.records)
-					response.status(200).send(res.records);
-				else
-					onError('', response);
-			})
-		}
+		});
 	})
 
 	apiRoutes.get('/describe/:sObject', function(request, response){
@@ -533,6 +492,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 	apiRoutes.post('/shopify/createProduct', function(request, response){
 		var shopify = require('../modules/shopify')(utils, conn);
+		var productModule = require('../modules/product')(utils, conn);
 		shopify.createProduct(request.body).then(function(res){
 			response.status(200).send(res);
 		}, function(err){
