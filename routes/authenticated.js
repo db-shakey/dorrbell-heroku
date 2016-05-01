@@ -185,9 +185,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 							if(res[i].Id)
 								whereClause += "'" + res[i].Id + "', "
 						}
-						utils.log(whereClause);
 						whereClause = whereClause.substring(0, whereClause.lastIndexOf(', ')) + ')';
-						utils.log(whereClause);
 						resolve(whereClause);
 					}else if(res.length == 0){
 						resolve(whereClause);
