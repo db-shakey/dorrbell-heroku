@@ -48,7 +48,6 @@ var utils = require('./utils/app-utils')(crypto, jwt);
 /**
 *  Demo route for interview
 */
-
 apiRoutes.get('/log', function(req, res){
     res.sendFile(path.join(__dirname + '/pages/log.html'));
 });
@@ -98,7 +97,9 @@ sfRoutes.use(function(req, res, next){
         });
     }
 });
-require('./routes/salesforce')(sfRoutes, utils);
+var sf = require('./routes/salesforce')(sfRoutes, utils);
+sf.startProductPoll(conn);
+
 
 /**
 * All API requests go through apiRoutes

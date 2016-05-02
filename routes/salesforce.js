@@ -9,6 +9,55 @@ module.exports = function(routes, utils){
 		response.send(err);
 	}
 
+  return {
+    startProductPoll : function(conn){
+      var CronJob = require('cron').CronJob;
+      new CronJob('0 * * * *', function() {
+        shopify.getAllProducts().then(function(products){
+          utils.log('executing product update');
+
+          var promiseArray = new Array();
+          var variantArray = new Array();
+
+          for(var i in products){
+            for(var x in products[i].variants){
+              variantArray.push(products[i].variants[x].id);
+            }
+          }
+
+          var getMetafields = function(index){
+            setTimeout(function(){
+              if(index < variantArray.length){
+                promiseArray.push(shopify.getVariantMetafields(variantArray[index]));
+                getMetafields(index + 1);
+              }else{
+                finalize();
+              }
+            }, 500);
+          }
+
+          var finalize = function(){
+            Promise.all(promiseArray).then(function(metadata){
+              var body = {
+                "products" : products,
+                "metadata" : metadata
+              };
+              utils.log(body);
+              conn.apex.put('/Product/', body);
+            }, function(err){
+              onError(err, res);
+            });
+          }
+
+          getMetafields(0);
+
+
+        }, function(err){
+          onError(err, res);
+        })
+      }, null, true, 'America/Los_Angeles');
+    }
+  }
 
   routes.post('/transaction/clone', function(req, res){
     var gateway;
@@ -42,13 +91,5 @@ module.exports = function(routes, utils){
       onError("Invalid transaction data", res);
     }
   });
-
-  routes.get('/shopify/products', function(req, res){
-    shopify.getAllProducts().then(function(products){
-      res.status(200).send(products);
-    }, function(err){
-      onError(err, res);
-    })
-  })
 
 };
