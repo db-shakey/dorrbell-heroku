@@ -48,27 +48,6 @@ var utils = require('./utils/app-utils')(crypto, jwt);
 /**
 *  Demo route for interview
 */
-apiRoutes.get('/products-sample', function(req, res){
-    conn.query("SELECT Id, \
-    Name, \
-    SKU__c, \
-    Store__r.Name, \
-    RecordType.Name, \
-    Department__c, \
-    Brand__c, \
-    Image__r.Image_Source__c, \
-    Family, \
-    Description, \
-    (SELECT Id, Name, SKU__c, Store__r.Name, RecordType.Name, Department__c, Brand__c, Image__r.Image_Source__c, Family, Description FROM Variants__r) \
-    FROM Product2 \
-    WHERE RecordType.DeveloperName = 'Product' \
-    ORDER BY CreatedDate DESC LIMIT 30", function(err, recs){
-        if(!err)
-        res.status(200).send(recs);
-        else
-        res.status(401).send(err);
-    })
-})
 
 apiRoutes.get('/log', function(req, res){
     res.sendFile(path.join(__dirname + '/pages/log.html'));
@@ -110,7 +89,6 @@ require('./routes/webhooks')(webhooks, conn, utils);
 */
 //authenticate requests
 sfRoutes.use(function(req, res, next){
-    utils.log(req.body);
     if(utils.checkSfToken(req))
     next();
     else{
@@ -120,7 +98,7 @@ sfRoutes.use(function(req, res, next){
         });
     }
 });
-require('./routes/braintree')(sfRoutes, utils);
+require('./routes/salesforce')(sfRoutes, utils);
 
 /**
 * All API requests go through apiRoutes

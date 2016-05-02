@@ -342,6 +342,23 @@ module.exports = function(utils, conn){
       });
 
     },
+    getAllProducts : function(){
+      var req = require('request');
+      return new Promise(function(resolve, reject){
+        req({
+          uri : 'https://' + apiKey + ':' + password + '@homefit.myshopify.com/admin/products.json',
+          method : 'GET'
+        }, function(err, res, body){
+          if(!err && !body.errors)
+            resolve(JSON.parse(body).products);
+          else if(body.errors)
+            reject(body.errors);
+          else
+            reject(err);
+        });
+      });
+
+    },
 
     deleteVariant : function(productId, variantId){
       var req = require('request');

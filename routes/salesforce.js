@@ -1,7 +1,7 @@
 module.exports = function(routes, utils){
 
   var braintree = require("braintree");
-  var gateway;
+  var shopify = require('../modules/shopify')(utils);
 
   var onError = function(err, response){
 		utils.log(err);
@@ -9,7 +9,10 @@ module.exports = function(routes, utils){
 		response.send(err);
 	}
 
-  routes.use(function(req, res, next){
+
+  routes.post('/transaction/clone', function(req, res){
+    var gateway;
+
     if(req.body.bt){
       gateway = braintree.connect({
         environment: braintree.Environment.Production,
@@ -17,18 +20,12 @@ module.exports = function(routes, utils){
         publicKey : req.body.bt.publicKey,
         privateKey : req.body.bt.privateKey
       });
-      next();
     }else{
       return res.status(403).send({
         success : false,
         message : 'Invalid Braintree Credentials'
       });
     }
-  });
-
-  routes.post('/transaction/clone', function(req, res){
-    utils.log('cloning');
-    utils.log(req.body);
     if(req.body.bTransaction && req.body.bTransaction.transactionId){
       gateway.transaction.cloneTransaction(req.body.bTransaction.transactionId, {
         amount : req.body.bTransaction.amount,
@@ -45,5 +42,13 @@ module.exports = function(routes, utils){
       onError("Invalid transaction data", res);
     }
   });
+
+  routes.get('/shopify/products', function(req, res){
+    shopify.getAllProducts().then(function(products){
+      res.status(200).send(products);
+    }, function(err){
+      onError(err, res);
+    })
+  })
 
 };
