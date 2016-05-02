@@ -13,12 +13,14 @@ module.exports = function(utils, conn){
         body : postData,
         json : true
       }, function(err, res, body){
-        if(!err && !body.errors)
+        if(!err && (body && !body.errors))
           resolve(body);
-        else if(body.errors)
+        else if(body && body.errors)
           reject(body.errors);
-        else
+        else if(err)
           reject(err);
+        else
+          resolve();
       });
     });
   }
