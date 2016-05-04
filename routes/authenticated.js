@@ -3,6 +3,8 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	var globalDescribe;
 	var updated = {};
 
+	var shopify = require('../modules/shopify')(utils, conn);
+
 	var onError = function(err, response){
 		utils.log('----------ERROR------------');
 		utils.log(err);
@@ -474,7 +476,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	 * Shopify Updates
 	 *************************/
 	apiRoutes.post('/shopify/updateVariant', function(request, response){
-		var shopify = require('../modules/shopify')(utils, conn);
+
 		shopify.updateVariant(request.body).then(function(){
 			response.status(200).send('Ok');
 		}, function(err){
@@ -483,7 +485,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	})
 
 	apiRoutes.post('/shopify/createVariant', function(request, response){
-		var shopify = require('../modules/shopify')(utils, conn);
+
 		shopify.createVariant(request.body.productId, request.body.variant).then(function(){
 			response.status(200).send('Ok');
 		}, function(err){
@@ -492,7 +494,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	})
 
 	apiRoutes.post('/shopify/createProduct', function(request, response){
-		var shopify = require('../modules/shopify')(utils, conn);
+
 		var productModule = require('../modules/product')(utils, conn);
 		shopify.createProduct(request.body).then(function(res){
 			response.status(200).send(res);
@@ -502,7 +504,6 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	});
 
 	apiRoutes.post('/shopify/updateProduct', function(request, response){
-		var shopify = require('../modules/shopify')(utils, conn);
 		shopify.updateProduct(request.body).then(function(res){
 			response.status(200).send(res);
 		}, function(err){
@@ -512,15 +513,23 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 
 	apiRoutes.get('/shopify/productTypes', function(request, response){
-		var shopify = require('../modules/shopify')(utils, conn);
 		shopify.getProductTypes().then(function(res){
 			response.status(200).send(res);
 		}, function(err){
 			onError(err, response);
 		});
 	});
+
+
+	apiRoutes.get('/shopify/productTags', function(request, response){
+		shopify.getProductTags().then(function(res){
+			response.status(200).send(res);
+		}, function(err){
+			onError(err, response);
+		});
+	});
+
 	apiRoutes.post('/shopify/deleteVariant', function(request, response){
-		var shopify = require('../modules/shopify')(utils, conn);
 		shopify.deleteVariant(request.body.productId, request.body.variantId).then(function(res){
 			response.status(200).send(res);
 		}, function(err){

@@ -98,7 +98,7 @@ sfRoutes.use(function(req, res, next){
     }
 });
 var sf = require('./routes/salesforce')(sfRoutes, utils);
-sf.startProductPoll(conn);
+//sf.startProductPoll(conn);
 
 
 /**

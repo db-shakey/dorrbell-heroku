@@ -3,6 +3,22 @@ module.exports = function(utils, conn){
   var password = 'e465022f2fbf924b05f710f403758345';
   var http = require('https');
 
+  Array.prototype.contains = function(v) {
+      for(var i = 0; i < this.length; i++) {
+          if(this[i] === v) return true;
+      }
+      return false;
+  };
+  Array.prototype.unique = function() {
+      var arr = [];
+      for(var i = 0; i < this.length; i++) {
+          if(!arr.contains(this[i])) {
+              arr.push(this[i]);
+          }
+      }
+      return arr;
+  }
+
   var doCallout = function(method, path, postData){
     var req = require('request');
 
@@ -174,21 +190,7 @@ module.exports = function(utils, conn){
     },
 
     getProductTypes : function(){
-      Array.prototype.contains = function(v) {
-          for(var i = 0; i < this.length; i++) {
-              if(this[i] === v) return true;
-          }
-          return false;
-      };
-      Array.prototype.unique = function() {
-          var arr = [];
-          for(var i = 0; i < this.length; i++) {
-              if(!arr.contains(this[i])) {
-                  arr.push(this[i]);
-              }
-          }
-          return arr;
-      }
+
       return new Promise(function(resolve, reject){
         doCallout('GET', 'products.json?fields=product_type').then(function(body){
           var distinct = new Array();
@@ -199,7 +201,23 @@ module.exports = function(utils, conn){
           }
           resolve(distinct.unique());
         }, reject);
-      })
+      });
+    },
+
+    getProductTags : function(){
+      return new Promise(function(resolve, reject){
+        doCallout('GET', 'products.json?fields=tags').then(function(body){
+          var distinct = new Array();
+          var products = body.products;
+          for(var i in products){
+            if(products[i].tags && products[i].tags != null){
+              var productTags = products[i].tags.split(", ");
+              distinct = distinct.concat(productTags);
+            }
+          }
+          resolve(distinct.unique());
+        }, reject);
+      });
     },
 
     getProduct : function(shopifyId){
