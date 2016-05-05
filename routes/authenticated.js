@@ -529,6 +529,22 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		});
 	});
 
+	apiRoutes.get('/shopify/sizes', function(request, response){
+		shopify.getSizes().then(function(res){
+			response.status(200).send(res);
+		}, function(err){
+			onError(err, response);
+		});
+	});
+
+	apiRoutes.get('/shopify/colors', function(request, response){
+		shopify.getColors().then(function(res){
+			response.status(200).send(res);
+		}, function(err){
+			onError(err, response);
+		});
+	});
+
 	apiRoutes.post('/shopify/deleteVariant', function(request, response){
 		shopify.deleteVariant(request.body.productId, request.body.variantId).then(function(res){
 			response.status(200).send(res);

@@ -220,6 +220,32 @@ module.exports = function(utils, conn){
       });
     },
 
+    getSizes : function(){
+      return new Promise(function(resolve, reject){
+        doCallout('GET', 'variants.json?fields=option1').then(function(body){
+          var distinct = new Array();
+          for(var i in body.variants){
+            if(body.variants[i].option1 && body.variants[i].option1 != null)
+              distinct.push(body.variants[i].option1);
+          }
+          resolve(distinct.unique());
+        }, reject);
+      });
+    },
+
+    getColors : function(){
+      return new Promise(function(resolve, reject){
+        doCallout('GET', 'variants.json?fields=option2').then(function(body){
+          var distinct = new Array();
+          for(var i in body.variants){
+            if(body.variants[i].option2 && body.variants[i].option2 != null)
+              distinct.push(body.variants[i].option2);
+          }
+          resolve(distinct.unique());
+        }, reject);
+      });
+    },
+
     getProduct : function(shopifyId){
       return new Promise(function(resolve, reject){
         doCallout('GET', 'products/' + shopifyId + '.json').then(function(body){
