@@ -161,7 +161,7 @@ module.exports = function(utils, conn){
         var postData = {
           "variant" : variant
         }
-        doCallout('POST', 'admin/products/' + productId + '/variants.json', postData).then(function(){
+        doCallout('POST', 'products/' + productId + '/variants.json', postData).then(function(){
           that.getProduct(productId).then(productModule.upsertProduct).then(resolve, reject)
         }, reject);
       });
