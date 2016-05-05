@@ -7,7 +7,6 @@ module.exports = function(utils, conn){
 
   return {
     upsertProduct : function(product){
-
       var metadata = new Array();
 
       for(var i in product.variants){

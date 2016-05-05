@@ -19,14 +19,14 @@ app.use(express.static('public'));
 
 
 app.use(cors());
-app.use(bodyParser.json({limit: '50mb'}));
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(bodyParser.json({
     verify : function(req, res, buf, encoding){
         req.headers['x-generated-signature'] = crypto.createHmac('sha256', '5c93443153ae4d621d78b67355df7e41')
         .update(buf)
         .digest('base64');
-    }
+    },
+    limit : '50mb'
 }));
 
 var apiRoutes = express.Router();
@@ -76,9 +76,9 @@ apiRoutes.post('/error', function(req, res){
 //authenticate requests
 webhooks.use(function(req, res, next){
     if(utils.verifyWebhook(req))
-    next();
+      next();
     else
-    res.status(401).send("Invalid Signature");
+      res.status(401).send("Invalid Signature");
 });
 
 
