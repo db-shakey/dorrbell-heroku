@@ -288,30 +288,22 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	});
 
 	apiRoutes.post("/startReturns", function(request, response){
-		conn.query("SELECT Id FROM Order_Store__c WHERE Order__c = '" + request.body.Id + "' AND Number_of_Returns__c > 0", function(queryError, data){
-			if(queryError)
-				onError(queryError, response);
-			else{
-				var deliveries = new Array();
-				for(var i in data.records){
-					deliveries.push({Id : data.records[i].Id, Status__c : "Return Started"});
-				}
-				conn.sobject("Order_Store__c").update(deliveries, function(err2, rets2){
-					if(err2)
-						onError(err2, response);
-					else{
-						conn.sobject("Order").update({
-							Id : request.body.Id,
-							Marked_Retrieved__c : new Date()
-						}, function(err, data){
-							if(err)
-								onError(err);
-							else
-								setOrderStatus(request.body.Id, "Retrieved From Customer", null, null, response);
-						});
-					}
-				})
+
+		conn.query("SELECT Id FROM Order_Store__c WHERE Order__c = '" + request.body.Id + "' AND Number_of_Returns__c > 0").then(function(data){
+			var deliveries = new Array();
+			for(var i = 0; i< data.records.length; i++){
+				deliveries.push({Id : data.records[i].Id, Status__c : "Return Started"});
 			}
+			return conn.sobject("Order_Store__c").update(deliveries).then(function(rets2){
+				return conn.sobject("Order").update({
+					Id : request.body.Id,
+					Marked_Retrieved__c : new Date()
+				}).then(function(data){
+					return setOrderStatus(request.body.Id, "Retrieved From Customer", null, null, response);
+				});
+			})
+		}, function(err){
+			onError(err, response);
 		});
 	});
 
