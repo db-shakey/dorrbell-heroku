@@ -14,72 +14,50 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 
 	var setOrderStatus = function(orderId, orderStatus, deliveryStatus, itemStatus, response){
-		var orderPromise = new Promise(function(resolve, reject){
-			if(orderStatus){
-				conn.sobject("Order").update({
-					Id : orderId,
-					Status__c : orderStatus
-				}, function(err, ret){
-						if(err)
-							reject(err);
-						else
-							resolve(ret);
-				});
-			}else
-				resolve();
-		});
+		var promiseArray = new Array();
 
-		var orderStorePromise = new Promise(function(resolve, reject){
-			if(deliveryStatus){
-				conn.query("SELECT Id FROM Order_Store__c WHERE Order__c = '" + orderId + "'", function(err, rets){
-					if(err) reject(err);
-					else{
-						var idArray = new Array();
-						for(var i in rets.records){
-							idArray.push({
-								Id : rets.records[i].Id,
-								Status__c : deliveryStatus
-							});
-						}
-						conn.sobject("Order_Store__c").update(idArray, function(updateError, updateResult){
-							if(updateError) reject(updateError);
-							else resolve(updateResult);
+		if(orderStatus)
+			promiseArray.push(conn.sobject("Order").update({Id: orderId, Status__c : orderStatus}));
+
+		if(deliveryStatus){
+			promiseArray.push(
+				conn.query("SELECT Id FROM Order_Store__c WHERE Order__c = '" + orderId + "'").then(function(rets){
+					var idArray = new Array();
+					for(var i = 0; i<rets.records.length; i++){
+						idArray.push({
+							Id : rets.records[i].Id,
+							Status__c : deliveryStatus
 						});
 					}
-				});
-			}else
-				resolve();
-		});
+					return conn.sobject("Order_Store__c").update(idArray);
+				})
+			);
+		}
 
-		var orderItemPromise = new Promise(function(resolve, reject){
-			if(itemStatus){
-				conn.query("SELECT Id, Status__c FROM OrderItem WHERE OrderId = '" + orderId + "'", function(err, rets){
-					if(err) reject(err);
-					else{
-						var idArray = new Array();
-						for(var i in rets.records){
-
-							var newItem = {
-								Id : rets.records[i].Id,
-								Status__c : itemStatus
-							};
-							if(itemStatus == 'Purchased' && rets.records[i].Status__c == 'Checked Out'){
-								idArray.push(newItem);
-							}else if(itemStatus != 'Purchased')
-								idArray.push(newItem);
-						}
-						conn.sobject("OrderItem").update(idArray, function(updateError, updateResult){
-							if(updateError) reject(updateError);
-							else resolve(updateResult);
-						});
+		if(itemStatus){
+			promiseArray.push(
+				conn.query("SELECT Id, Status__c FROM OrderItem WHERE OrderId = '" + orderId + "'").then(function(rets){
+					var idArray = new Array();
+					for(var i = 0; i<rets.records.length; i++){
+						var newItem = {
+							Id : rets.records[i].Id,
+							Status__c : itemStatus
+						};
+						if(itemStatus == 'Purchased' && rets.records[i].Status__c == 'Checked Out'){
+							idArray.push(newItem);
+						}else if(itemStatus != 'Purchased')
+							idArray.push(newItem);
 					}
-				});
-			}else
-				resolve();
-		});
-		Promise.all([orderPromise, orderStorePromise, orderItemPromise]).then(function(results){
+					return conn.sobject("OrderItem").update(idArray);
+				})
+			);
+		}
+
+		Promise.all(promiseArray).then(function(results){
 			response.status(200).send("Ok");
-		}, onError);
+		}, function(err){
+			onError(err, response);
+		});
 	}
 
 	var pagination = function(action, lim){
