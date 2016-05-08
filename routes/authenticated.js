@@ -10,6 +10,20 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		utils.log(err);
 		response.status(400);
 		response.send(err);
+
+		var errorString;
+		try{
+			errorString = JSON.stringify(err);
+		}catch(e){
+			errorString = err;
+		}
+
+		conn.sobject("Mobile_Error__c").create({
+			Line_Number__c : 0,
+			Message__c : errorString,
+			Url__c : "https://shrouded-hollows-1707.herokuapp.com"
+		});
+
 	}
 
 
