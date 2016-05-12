@@ -17,7 +17,7 @@ module.exports = function(route, conn, utils){
           utils.log(err);
         });
       else if(route == 'delete')
-        productModule.deleteProduct(product.Id).then(function(){
+        productModule.deleteProduct(product.id).then(function(){
 
         }, function(err){
           utils.log(err);
