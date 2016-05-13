@@ -109,9 +109,7 @@ module.exports = function(){
 					return valid;
 				}else
 					return false;
-
 			}
-
 		},
 		getUser : function(conn, contactId, callback, error){
 	  		var contact = new Promise(function(resolve, reject){
@@ -155,7 +153,33 @@ module.exports = function(){
 	  		}, function(err){
 	  			error(err);
 	  		})
+		},
+
+		setProfilePhoto : function(conn, contactId, imageData){
+			return conn.query("SELECT Id FROM Attachment WHERE ParentId = '" + contactId + "' AND Name = 'profile.jpg'").then(function(data){
+				if(data.records && data.records.length){
+					var idArray = new Array();
+					for(var i = 0; i<data.records.length; i++){
+						idArray.push(data.records[i].Id);
+					}
+					return conn.sobject("Attachment").del(idArray);
+				}else
+					return new Promise(function(r, e){r();});
+			}).then(function(){
+				if(contactId && imageData && imageData.indexOf("base64,") != -1){
+					var base64data = imageData.substring(imageData.indexOf("base64,") + 7);
+					return conn.sobject("Attachment").create({
+						ParentId : contactId,
+						Name: "profile.jpg",
+						body: base64data,
+						ContentType: "image/jpeg"
+					});
+				}else{
+					return new Promise(function(r, e){r();});
+				}
+			});
 		}
+
 	}
 
 }
