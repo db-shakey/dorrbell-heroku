@@ -2,7 +2,7 @@
   <head>
     <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
     <script>
-      function startLog(endpoint){
+      window.startLog = function(endpoint){
         var socket = io(endpoint, {
   					path : '/socket.io-client',
   					transports : ['websocket']
