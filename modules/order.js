@@ -18,7 +18,7 @@ module.exports = function(utils, conn){
       var inHomeTryOnEnd;
       var timeWindows = {};
 
-      for(var i in order.note_attributes){
+      for(var i = 0; i < order.note_attributes.length; i++){
         var n = order.note_attributes[i];
         if(n.name == "local_delivery_request"){
           var deliveryTime = n.value.replace(/\s+/g,' ').trim();
@@ -75,8 +75,6 @@ module.exports = function(utils, conn){
           return conn.apex.post('/Order/', body);
         });
       });
-
-
     },
 
     deleteOrder : function(productId){
