@@ -58,7 +58,7 @@ module.exports = function(utils, conn){
     upsertOrder : function(order){
       var shopify = require('./shopify')(utils);
       var metaArray = new Array();
-      for(var i in order.line_items){
+      for(var i = 0; i<order.line_items.length; i++){
         var li = order.line_items[i];
         metaArray.push(shopify.getVariantMetafields(li.variant_id));
       }
