@@ -496,7 +496,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	});
 
 	apiRoutes.post('/shopify/updateVariant', function(request, response){
-		shopify.updateProduct(request.body.variant, request.body.parentProductId).then(function(res){
+		shopify.updateVariant(request.body.variant, request.body.parentProductId).then(function(res){
 			response.status(200).send(res);
 		}, function(err){
 			onError(err, response);
