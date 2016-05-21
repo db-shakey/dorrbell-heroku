@@ -212,8 +212,8 @@ module.exports = function(utils, conn){
       for(var i = 0; i<variantArray.length; i++){
         pArray.push(doCallout('PUT', 'variants/' + variantArray[i].id + '.json', {"variant" : variantArray[i]}));
       }
-      Promise.all(pArray).then(function(){
-        that.getProduct(parentProductId).then(productModule.upsertProduct).then(resolve, reject);
+      return Promise.all(pArray).then(function(){
+        return that.getProduct(parentProductId).then(productModule.upsertProduct);
       });
     },
 
