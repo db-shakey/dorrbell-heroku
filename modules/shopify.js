@@ -202,7 +202,7 @@ module.exports = function(utils, conn){
           that.getProduct(parentProductId).then(productModule.upsertProduct).then(resolve, reject);
         }, reject);
       });
-    }
+    },
 
     getProductTypes : function(){
       return new Promise(function(resolve, reject){
