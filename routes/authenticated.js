@@ -459,9 +459,9 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	/**************************
 	 * Shopify Updates
 	 *************************/
-	apiRoutes.post('/shopify/updateVariant', function(request, response){
+	apiRoutes.post('/shopify/updateVariantFromProduct', function(request, response){
 
-		shopify.updateVariant(request.body).then(function(){
+		shopify.updateVariantFromProduct(request.body).then(function(){
 			response.status(200).send('Ok');
 		}, function(err){
 			onError(err, response);
@@ -489,6 +489,14 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 	apiRoutes.post('/shopify/updateProduct', function(request, response){
 		shopify.updateProduct(request.body).then(function(res){
+			response.status(200).send(res);
+		}, function(err){
+			onError(err, response);
+		});
+	});
+
+	apiRoutes.post('/shopify/updateVariant', function(request, response){
+		shopify.updateProduct(request.body.variant, request.body.parentProductId).then(function(res){
 			response.status(200).send(res);
 		}, function(err){
 			onError(err, response);

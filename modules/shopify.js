@@ -81,7 +81,7 @@ module.exports = function(utils, conn){
       return doCallout('POST', 'customers.json', postData);
     },
 
-    updateVariant : function(product){
+    updateVariantFromProduct : function(product){
       var productModule = require('../modules/product')(utils, conn);
 
       var updateVariantPromise = function(){
@@ -189,8 +189,22 @@ module.exports = function(utils, conn){
       });
     },
 
-    getProductTypes : function(){
+    updateVariant : function(variant, parentProductId){
+      var that = this;
+      var productModule = require('../modules/product')(utils, conn);
 
+
+      return new Promise(function(resolve, reject){
+        var postData = {
+          "variant" : variant
+        }
+        doCallout('PUT', 'variants/' + variant.id + '.json', postData).then(function(){
+          that.getProduct(parentProductId).then(productModule.upsertProduct).then(resolve, reject);
+        }, reject);
+      });
+    }
+
+    getProductTypes : function(){
       return new Promise(function(resolve, reject){
         doCallout('GET', 'products.json?fields=product_type').then(function(body){
           var distinct = new Array();
@@ -254,6 +268,13 @@ module.exports = function(utils, conn){
       });
     },
 
+    getVariant : function(shopifyId){
+      return new Promise(function(resolve, reject){
+        doCallout('GET', 'variants/' + shopifyId + '.json').then(function(body){
+          resolve(body.variant);
+        }, reject);
+      });
+    },
 
     getAllProducts : function(){
       return new Promise(function(resolve, reject){
