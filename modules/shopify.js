@@ -204,6 +204,19 @@ module.exports = function(utils, conn){
       });
     },
 
+    updateVariantBatch : function(variantArray, parentProductId){
+      var that = this;
+      var productModule = require('../modules/product')(utils, conn);
+      var pArray = new Array();
+
+      for(var i = 0; i<variantArray.length; i++){
+        pArray.push(doCallout('PUT', 'variants/' + variantArray[i].id + '.json', {"variant" : variantArray[i]}));
+      }
+      Promise.all(pArray).then(function(){
+        that.getProduct(parentProductId).then(productModule.upsertProduct).then(resolve, reject);
+      });
+    },
+
     getProductTypes : function(){
       return new Promise(function(resolve, reject){
         doCallout('GET', 'products.json?fields=product_type').then(function(body){

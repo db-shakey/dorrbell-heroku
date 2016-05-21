@@ -503,6 +503,13 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		});
 	});
 
+	apiRoutes.post('/shopify/updateVariantBatch', function(request, response){
+		shopify.updateVariantBatch(request.body.variants, request.body.parentProductId).then(function(res){
+			response.status(200).send(res);
+		}, function(err){
+			onError(err, response);
+		});
+	});
 
 	apiRoutes.get('/shopify/productTypes', function(request, response){
 		shopify.getProductTypes().then(function(res){
