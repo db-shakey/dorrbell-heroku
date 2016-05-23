@@ -218,6 +218,7 @@ module.exports = function(utils, conn){
     },
 
     createProductImage : function(image, productId){
+      var that = this;
       var postData = {
         "image" : image
       }
@@ -227,12 +228,14 @@ module.exports = function(utils, conn){
     },
 
     deleteImage : function(imageId, productId){
+      var that = this;
       return doCallout('DELETE', 'products/' + productId + '/images/' + imageId + '.json').then(function(){
         return that.getProduct(productId).then(productModule.upsertProduct);
       });
     },
 
     updateImage : function(image, productId){
+      var that = this;
       var postData = {
         "image" : image
       }
