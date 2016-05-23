@@ -550,7 +550,31 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		}, function(err){
 			onError(err, response);
 		});
-	})
+	});
+
+	apiRoutes.post('/shopify/createImage', function(request, response){
+		shopify.createProductImage(request.body.image, request.body.productId).then(function(res){
+			response.status(200).send(res);
+		}, function(err){
+			onError(err, response);
+		});
+	});
+
+	apiRoutes.post('/shopify/deleteImage', function(request, response){
+		shopify.deleteImage(request.body.imageId, request.body.productId).then(function(res){
+			response.status(200).send(res);
+		}, function(err){
+			onError(err, response);
+		});
+	});
+
+	apiRoutes.post('/shopify/updateImage', function(request, response){
+		shopify.updateImage(request.body.image, request.body.productId).then(function(res){
+			response.status(200).send(res);
+		}, function(err){
+			onError(err, response);
+		});
+	});
 
 
 	/**************************

@@ -217,6 +217,30 @@ module.exports = function(utils, conn){
       });
     },
 
+    createProductImage : function(image, productId){
+      var postData = {
+        "image" : image
+      }
+      return doCallout('POST', 'products/' + productId + '/images.json', postData).then(function(){
+        return that.getProduct(productId).then(productModule.upsertProduct);
+      });
+    },
+
+    deleteImage : function(imageId, productId){
+      return doCallout('DELETE', 'products/' + productId + '/images/' + imageId + '.json').then(function(){
+        return that.getProduct(productId).then(productModule.upsertProduct);
+      });
+    },
+
+    updateImage : function(image, productId){
+      var postData = {
+        "image" : image
+      }
+      return doCallout('PUT', 'products/' + productId + '/images/' + image.id + '.json', postData).then(function(){
+        return that.getProduct(productId).then(productModule.upsertProduct);
+      });
+    },
+
     getProductTypes : function(){
       return new Promise(function(resolve, reject){
         doCallout('GET', 'products.json?fields=product_type').then(function(body){
