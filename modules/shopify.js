@@ -219,6 +219,7 @@ module.exports = function(utils, conn){
 
     createProductImage : function(image, productId){
       var that = this;
+      var productModule = require('../modules/product')(utils, conn);
       var postData = {
         "image" : image
       }
@@ -229,6 +230,7 @@ module.exports = function(utils, conn){
 
     deleteImage : function(imageId, productId){
       var that = this;
+      var productModule = require('../modules/product')(utils, conn);
       return doCallout('DELETE', 'products/' + productId + '/images/' + imageId + '.json').then(function(){
         return that.getProduct(productId).then(productModule.upsertProduct);
       });
@@ -236,6 +238,7 @@ module.exports = function(utils, conn){
 
     updateImage : function(image, productId){
       var that = this;
+      var productModule = require('../modules/product')(utils, conn);
       var postData = {
         "image" : image
       }
