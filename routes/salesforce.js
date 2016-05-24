@@ -43,7 +43,7 @@ module.exports = function(routes, utils){
       }
     });
   }
-  
+
   return {
     startProductPoll : function(conn){
       var CronJob = require('cron').CronJob;
@@ -59,13 +59,15 @@ module.exports = function(routes, utils){
         var promiseArray = new Array();
         var variantArray = new Array();
 
-        for(var i in products){
-          for(var x in products[i].variants){
+        for(var i = 0; i<products.length; i++){
+          for(var x = 0; x <products[i].variants.length; x++){
             variantArray.push(products[i].variants[x].id);
           }
         }
 
+
         var getMetafields = function(index){
+          utils.log('getting metafields');
           setTimeout(function(){
             if(index < variantArray.length){
               promiseArray.push(shopify.getVariantMetafields(variantArray[index]));
@@ -77,6 +79,7 @@ module.exports = function(routes, utils){
         }
 
         var finalize = function(){
+          utils.log('finalizing');
           Promise.all(promiseArray).then(function(metadata){
             var body = {
               "products" : products,
