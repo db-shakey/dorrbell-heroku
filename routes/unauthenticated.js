@@ -1,7 +1,7 @@
 module.exports = function(apiRoutes, conn, utils){
 
 	apiRoutes.post('/forceSync', function(req, res){
-		var sf = require('./routes/salesforce')(null, utils);
+		var sf = require('./salesforce')(null, utils);
 		sf.syncProducts(conn);
 		res.status(200).send();
 	})
