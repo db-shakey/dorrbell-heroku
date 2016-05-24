@@ -106,6 +106,9 @@ module.exports = function(utils, conn){
               "inventory_quantity" : product.Inventory_Quantity__c
             }
           };
+          if(product.Image__r && product.Image__r.Shopify_Id__c)
+            postData.variant.image_id = product.Image__r.Shopify_Id__c;
+            
           doCallout('PUT', 'variants/' + product.Shopify_Id__c + '.json', postData).then(function(){
             resolve(product.Parent_Product__r.Shopify_Id__c);
           }, reject);
