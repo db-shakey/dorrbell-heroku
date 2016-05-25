@@ -609,7 +609,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		var passwordForm = request.body.password;
 		var contactForm = request.body.contact;
 		var getContact = new Promise(function(resolve, reject){
-			conn.query("SELECT Id, Password__c FROM Contact WHERE Email = '" + contactForm.Email + "'", function(error, result){
+			conn.query("SELECT Id, Password__c FROM Contact WHERE Username = '" + contactForm.Email + "'", function(error, result){
 				if(error)
 					reject(error);
 				else if(!result.records || result.records.length == 0)
@@ -620,7 +620,9 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		}).then(function(data){
 			return new Promise(function(resolve, reject){
 				var contact = data.records[0];
-				if(utils.encryptText(passwordForm.old) != contact.password__c){
+				utils.log(contact);
+				utils.log(passwordForm);
+				if(utils.encryptText(passwordForm.old) != contact.Password__c){
 					reject("Incorrect Password");
 				}else if(passwordForm.newPassword != passwordForm.confirm){
 					reject("Your passwords do not match");
