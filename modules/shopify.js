@@ -243,7 +243,7 @@ module.exports = function(utils, conn){
       var that = this;
       var productModule = require('../modules/product')(utils, conn);
       return doCallout('DELETE', 'products/' + productId + '.json').then(function(){
-        return that.getProduct(productId).then(productModule.upsertProduct);
+        return productModule.deleteProduct(productId);
       })
     },
 

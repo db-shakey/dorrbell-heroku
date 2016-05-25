@@ -488,7 +488,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	});
 
 	apiRoutes.post('/shopify/deleteProduct', function(request, response){
-		shopify.createVariant(request.body.productId).then(function(){
+		shopify.deleteProduct(request.body.productId).then(function(){
 			response.status(200).send('Ok');
 		}, function(err){
 			onError(err, response);
