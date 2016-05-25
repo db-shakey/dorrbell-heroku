@@ -245,7 +245,7 @@ module.exports = function(utils, conn){
       return doCallout('DELETE', 'products/' + productId + '.json').then(function(){
         return that.getProduct(productId).then(productModule.upsertProduct);
       })
-    }
+    },
 
     updateImage : function(image, productId){
       var that = this;
