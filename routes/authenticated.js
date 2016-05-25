@@ -609,7 +609,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		var passwordForm = request.body.password;
 		var contactForm = request.body.contact;
 		var getContact = new Promise(function(resolve, reject){
-			conn.query("SELECT Id, Password__c FROM Contact WHERE Username = '" + contactForm.Email + "'", function(error, result){
+			conn.query("SELECT Id, Password__c FROM Contact WHERE Username__c = '" + contactForm.Email + "'", function(error, result){
 				if(error)
 					reject(error);
 				else if(!result.records || result.records.length == 0)
