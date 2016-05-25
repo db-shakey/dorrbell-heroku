@@ -487,6 +487,14 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		});
 	});
 
+	apiRoutes.post('/shopify/deleteProduct', function(request, response){
+		shopify.createVariant(request.body.productId).then(function(){
+			response.status(200).send('Ok');
+		}, function(err){
+			onError(err, response);
+		});
+	});
+
 	apiRoutes.post('/shopify/updateProduct', function(request, response){
 		shopify.updateProduct(request.body).then(function(res){
 			response.status(200).send(res);
@@ -518,6 +526,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 			onError(err, response);
 		});
 	});
+
 
 
 	apiRoutes.get('/shopify/productTags', function(request, response){
@@ -594,7 +603,6 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		}, function(err){
 			onError(err, res);
 		});
-
 	});
 
 	apiRoutes.post("/changePassword", function(request, response){

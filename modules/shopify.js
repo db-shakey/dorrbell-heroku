@@ -108,7 +108,7 @@ module.exports = function(utils, conn){
           };
           if(product.Image__r && product.Image__r.Shopify_Id__c)
             postData.variant.image_id = product.Image__r.Shopify_Id__c;
-            
+
           doCallout('PUT', 'variants/' + product.Shopify_Id__c + '.json', postData).then(function(){
             resolve(product.Parent_Product__r.Shopify_Id__c);
           }, reject);
@@ -238,6 +238,14 @@ module.exports = function(utils, conn){
         return that.getProduct(productId).then(productModule.upsertProduct);
       });
     },
+
+    deleteProduct : function(productId){
+      var that = this;
+      var productModule = require('../modules/product')(utils, conn);
+      return doCallout('DELETE', 'products/' + productId + '.json').then(function(){
+        return that.getProduct(productId).then(productModule.upsertProduct);
+      })
+    }
 
     updateImage : function(image, productId){
       var that = this;
