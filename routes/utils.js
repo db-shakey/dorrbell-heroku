@@ -27,7 +27,6 @@ module.exports = function(){
 			for (var p in obj) {
 		        if (obj.hasOwnProperty(p)) {
 		            if (p === "Id" || this.isSalesforceId(obj[p])) {
-		            	console.log("Socket " + socketId + " joining room " + obj[p]);
 		            	socket.join(obj[p]);
 		            } else if (obj[p] instanceof Object) {
 		                this.joinRooms(obj[p], socketId, socket);

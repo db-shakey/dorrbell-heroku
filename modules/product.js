@@ -27,7 +27,7 @@ module.exports = function(utils, conn){
     deleteProduct : function(productId){
       return conn.query("SELECT Id FROM Product2 WHERE Shopify_Id__c = '" + productId + "' OR Parent_Product__r.Shopify_Id__c = '" + productId + "'").then(
         function(result){
-          for(var i in result.records){
+          for(var i = 0; i < results.records.; i++){
             result.records[i].IsActive = false;
           }
           return conn.sobject("Product2").update(result.records);
