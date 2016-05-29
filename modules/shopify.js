@@ -2,6 +2,8 @@ module.exports = function(utils, conn){
   var apiKey = '12ad97558a61e66e2b4bde6dd8f97cd9';
   var password = 'e465022f2fbf924b05f710f403758345';
   var http = require('https');
+  var productModule = require('../modules/product')(utils, conn);
+
 
   Array.prototype.contains = function(v) {
       for(var i = 0; i < this.length; i++) {
@@ -18,6 +20,8 @@ module.exports = function(utils, conn){
       }
       return arr;
   }
+
+
 
   var doCallout = function(method, path, postData){
     var req = require('request');
@@ -82,7 +86,6 @@ module.exports = function(utils, conn){
     },
 
     updateVariantFromProduct : function(product){
-      var productModule = require('../modules/product')(utils, conn);
 
       var updateVariantPromise = function(){
         return new Promise(function(resolve, reject){
@@ -158,7 +161,6 @@ module.exports = function(utils, conn){
 
     },
     createVariant : function(productId, variant){
-      var productModule = require('../modules/product')(utils, conn);
       var that = this;
       return new Promise(function(resolve, reject){
         var postData = {
@@ -179,7 +181,6 @@ module.exports = function(utils, conn){
 
     updateProduct : function(product){
       var that = this;
-      var productModule = require('../modules/product')(utils, conn);
 
 
       return new Promise(function(resolve, reject){
@@ -194,7 +195,6 @@ module.exports = function(utils, conn){
 
     updateVariant : function(variant, parentProductId){
       var that = this;
-      var productModule = require('../modules/product')(utils, conn);
 
 
       return new Promise(function(resolve, reject){
@@ -209,7 +209,6 @@ module.exports = function(utils, conn){
 
     updateVariantBatch : function(variantArray, parentProductId){
       var that = this;
-      var productModule = require('../modules/product')(utils, conn);
       var pArray = new Array();
 
       for(var i = 0; i<variantArray.length; i++){
@@ -222,7 +221,6 @@ module.exports = function(utils, conn){
 
     createProductImage : function(image, productId){
       var that = this;
-      var productModule = require('../modules/product')(utils, conn);
       var postData = {
         "image" : image
       }
@@ -233,7 +231,6 @@ module.exports = function(utils, conn){
 
     deleteImage : function(imageId, productId){
       var that = this;
-      var productModule = require('../modules/product')(utils, conn);
       return doCallout('DELETE', 'products/' + productId + '/images/' + imageId + '.json').then(function(){
         return that.getProduct(productId).then(productModule.upsertProduct);
       });
@@ -241,7 +238,6 @@ module.exports = function(utils, conn){
 
     deleteProduct : function(productId){
       var that = this;
-      var productModule = require('../modules/product')(utils, conn);
       return doCallout('DELETE', 'products/' + productId + '.json').then(function(){
         return productModule.deleteProduct(productId);
       })
@@ -249,7 +245,6 @@ module.exports = function(utils, conn){
 
     updateImage : function(image, productId){
       var that = this;
-      var productModule = require('../modules/product')(utils, conn);
       var postData = {
         "image" : image
       }
@@ -317,6 +312,7 @@ module.exports = function(utils, conn){
     getProduct : function(shopifyId){
       return new Promise(function(resolve, reject){
         doCallout('GET', 'products/' + shopifyId + '.json').then(function(body){
+          productModule.generateThumbnails(body.product);
           resolve(body.product);
         }, reject);
       });
@@ -331,16 +327,43 @@ module.exports = function(utils, conn){
     },
 
     getAllProducts : function(){
-      return new Promise(function(resolve, reject){
-        doCallout('GET', 'products.json?limit=250').then(function(body){
-          resolve(body.products);
-        }, reject);
-      });
 
+      return new Promise(function(resolve, reject){
+
+        var promiseArray = new Array();
+        var productArray = new Array();
+
+        var getProducts = function(page){
+          var productCount;
+          setTimeout(function(){
+            promiseArray.push(new Promise(function(r, j){
+              doCallout('GET', 'products.json?limit=250&page=' + page).then(function(body){
+                if(body.products){
+                  productCount = body.products.length;
+                  for(var i = 0; i<body.products.length; i++){
+                    productModule.generateThumbnails(body.products[i]);
+                  }
+                  productArray = productArray.concat(body.products);
+                }
+                r();
+              }, j);
+            }));
+            if(productCount && productCount > 0)
+              getProducts(page + 1);
+            else
+              finalize();
+          }, 500);
+        }
+        var finalize = function(){
+          Promise.all(promiseArray).then(function(){
+            resolve(productArray);
+          }, reject);
+        }
+        getProducts(0);
+      });
     },
 
     deleteVariant : function(productId, variantId){
-      var productModule = require('../modules/product')(utils, conn);
       return new Promise(function(resolve, reject){
         doCallout('DELETE', 'products/' + productId + '/variants/' + variantId + '.json').then(function(body){
           productModule.deleteProduct(variantId).then(resolve, reject);

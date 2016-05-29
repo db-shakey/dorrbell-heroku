@@ -54,7 +54,6 @@ module.exports = function(routes, utils){
     },
     syncProducts : function(conn){
       shopify.getAllProducts().then(function(products){
-        utils.log('executing product update');
 
         var promiseArray = new Array();
         var variantArray = new Array();
@@ -67,7 +66,6 @@ module.exports = function(routes, utils){
 
 
         var getMetafields = function(index){
-          utils.log('getting metafields');
           setTimeout(function(){
             if(index < variantArray.length){
               promiseArray.push(shopify.getVariantMetafields(variantArray[index]));
@@ -79,13 +77,11 @@ module.exports = function(routes, utils){
         }
 
         var finalize = function(){
-          utils.log('finalizing');
           Promise.all(promiseArray).then(function(metadata){
             var body = {
               "products" : products,
               "metadata" : metadata
             };
-            utils.log(body);
             conn.apex.put('/Product/', body);
           }, function(err){
             onError(err, res);
