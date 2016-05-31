@@ -312,7 +312,9 @@ module.exports = function(utils, conn){
     getProduct : function(shopifyId){
       return new Promise(function(resolve, reject){
         doCallout('GET', 'products/' + shopifyId + '.json').then(function(body){
+          utils.log(body.product);
           productModule.generateThumbnails(body.product);
+          utils.log(body.product);
           resolve(body.product);
         }, reject);
       });
