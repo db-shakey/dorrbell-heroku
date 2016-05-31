@@ -13,7 +13,7 @@ module.exports = function(utils, conn){
         metadata.push(shopify.getVariantMetafields(product.variants[i].id));
       }
       metadata.push(shopify.getProductMetafields(product.id));
-      this.generateThumbnails(product);
+      generateThumbnails(product);
       return Promise.all(metadata).then(function(res){
         var body = {
           metadata : res,
