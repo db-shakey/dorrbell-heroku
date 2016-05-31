@@ -136,7 +136,6 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 			var query = "SELECT Id, \
 													Name, \
 													Image__r.Image_Source__c, \
-													Image__r.Image_Thumb__c, \
 													Family, \
 													Store__r.Name, \
 													Brand__c, \
