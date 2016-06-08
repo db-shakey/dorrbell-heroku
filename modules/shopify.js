@@ -31,8 +31,9 @@ module.exports = function(utils, conn){
       }, function(err, res, body){
         if(!err && (body && !body.errors))
           resolve(body);
-        else if(body && body.errors)
+        else if(body && body.errors){
           reject(body.errors);
+        }
         else if(err)
           reject(err);
         else

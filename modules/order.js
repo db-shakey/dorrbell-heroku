@@ -60,9 +60,9 @@ module.exports = function(utils, conn){
       var metaArray = new Array();
       for(var i = 0; i<order.line_items.length; i++){
         var li = order.line_items[i];
-        metaArray.push(shopify.getVariantMetafields(li.variant_id));
+        if(li.variant_id)
+          metaArray.push(shopify.getVariantMetafields(li.variant_id));
       }
-
 
       return Promise.all(metaArray).then(function(metadata){
         return Promise.all([findDeliveryWindow(order), shopify.getTransactionsForOrder(order.id)]).then(function(results){
