@@ -21,7 +21,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		conn.sobject("Mobile_Error__c").create({
 			Line_Number__c : 0,
 			Message__c : errorString,
-			Url__c : "https://shrouded-hollows-1707.herokuapp.com"
+			Url__c : "https://dorrbell.herokuapp.com"
 		});
 
 	}
@@ -235,16 +235,16 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 	apiRoutes.post('/query', function(request, response){
 		var query = request.body.query.replace(new RegExp('SELECT ', 'g'), 'SELECT LastModifiedDate, ');
-		utils.log(query);
 		conn.query(query, function(err, data){
 			if(err)
 				onError(err, response);
 
 			//join rooms based on results
+			/*
 			if(request.body.socketId){
 				socketUtils.joinRooms(data.records, request.body.socketId);
 			}
-
+			*/
 
 			response.json(data.records);
 		});
