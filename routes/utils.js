@@ -27,15 +27,14 @@ module.exports = function(){
 			for (var p in obj) {
 				console.log(1);
 		        if (obj.hasOwnProperty(p)) {
-							console.log(2);
 		            if (p === "Id" || this.isSalesforceId(obj[p])) {
-									console.log(3);
+									console.log(socket);
+									console.log(obj);
+									console.log(p);
+									console.log(obj[p]);
 		            	socket.join(obj[p]);
-									console.log(4);
 		            } else if (obj[p] instanceof Object) {
-									console.log(5);
 		                this.joinRooms(obj[p], socketId, socket);
-									console.log(6);
 		            }
 		        }
 		    }
