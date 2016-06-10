@@ -2,4 +2,3 @@ node_modules
 .env
 Dockerfile
 docker-compose.yml
-modules/keys.js
