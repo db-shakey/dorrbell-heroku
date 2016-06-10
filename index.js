@@ -13,6 +13,7 @@ var https         = require('https');
 var path          = require('path');
 //Main app
 var app = express();
+var keys = require('./modules/keys')();
 
 app.set('port', (process.env.PORT || 5000));
 app.use(express.static('public'));
@@ -22,7 +23,7 @@ app.use(cors());
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(bodyParser.json({
     verify : function(req, res, buf, encoding){
-        req.headers['x-generated-signature'] = crypto.createHmac('sha256', '5c93443153ae4d621d78b67355df7e41')
+        req.headers['x-generated-signature'] = crypto.createHmac('sha256', keys.shopify_key)
         .update(buf)
         .digest('base64');
     },
@@ -39,7 +40,7 @@ var conn = new jsforce.Connection({
 });
 var socketServer;
 
-var keys = require('./modules/keys')();
+
 conn.login(keys.sfUsername, keys.sfPassword, function(err, res){
     if(err){return console.error(err);}
 });
