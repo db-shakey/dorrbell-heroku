@@ -7,6 +7,7 @@ module.exports = function(utils, conn){
 
   return {
     upsertProduct : function(product){
+      var that = this;
       var metadata = new Array();
       for(var i = 0; i <product.variants.length; i++){
         metadata.push(shopify.getVariantMetafields(product.variants[i].id));
@@ -14,11 +15,11 @@ module.exports = function(utils, conn){
       metadata.push(shopify.getProductMetafields(product.id));
 
       return Promise.all(metadata).then(function(res){
+        that.generateThumbnails(product);
         var body = {
           metadata : res,
           product : product
         }
-        utils.log(body);
         return conn.apex.post('/Product/', body);
       });
 
