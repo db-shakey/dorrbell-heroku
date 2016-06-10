@@ -15,7 +15,7 @@ module.exports = function(){
 		},
 
 		joinRooms : function(obj, socketId, socket){
-			console.log(socket.id);
+			console.log(socket);
 			if(!socket){
 				console.log('no socket');
 				for(var i=0; i< connectionArray.length; i++){
