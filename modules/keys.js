@@ -7,7 +7,7 @@ module.exports = function(){
     password : 'd00rb3ll_secret',
     token : 'Basic Z14vbjcyayxOdUpnM0pfXw==',
     sfToken : 'BASIC flAuOXUvdyJQZ0ZxJUNMag==',
-    shopify_key : '5c93443153ae4d621d78b67355df7e41',
+    shopify_key : '795027ada3cf89abf34972a81301ef1c00db9671546fc890649ac07e4bedc62b',
     sfUsername : 'shakey@dorrbell.com',
     sfPassword : 'Seketha3OcPjDdJZZOaB9LEGuQs2lnwwm',
     shopifyUrl : function(){
