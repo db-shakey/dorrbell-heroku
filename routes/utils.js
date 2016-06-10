@@ -18,7 +18,7 @@ module.exports = function(){
 			utils.log(connectionArray);
 			if(!socket){
 				for(var i=0; i< connectionArray.length; i++){
-					if(connectionArray[i].id == socketId){
+					if(connectionArray[i].id.contains(socketId)){
 						socket = connectionArray[i];
 						break;
 					}
