@@ -95,7 +95,20 @@ module.exports = function(routes, utils){
 
         var deletingImages = new Array();
         var total;
-        var deleteUnusedImages = function(next_cursor){
+
+        var deleteUnusedImages = function(imageArray, start, offset){
+          var subSet = imageArray.slice(start, offset);
+          cloudinary.api.delete_resources(subSet, function(result){
+            if(offset < imageArray.length){
+              var newOffset = (offset + 100 < imageArray.length) ? offset + 100 : imageArray.length;
+              deleteUnusedImages(imageArray, offset, newOffset);
+            }else{
+              console.log(result);
+            }
+          });
+        }
+
+        var findUnusedImages = function(next_cursor){
           var params = {max_results : 500};
           if(next_cursor)
             params.next_cursor = next_cursor;
@@ -114,15 +127,15 @@ module.exports = function(routes, utils){
               }
               if(result.next_cursor)
                 getAllImages(result.next_cursor);
-              else
-                cloudinary.api.delete_resources(deletingImages, function(result){
-                  console.log('deleted ' + deletingImages.length + ' images');
-                });
+              else{
+                deleteUnusedImages(deletingImages, 0, 100);
+              }
+
             },
             params
           )
         }
-        deleteUnusedImages();
+        findUnusedImages();
 
         getMetafields(0);
       }, function(err){
