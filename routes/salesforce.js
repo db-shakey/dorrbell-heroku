@@ -53,21 +53,24 @@ module.exports = function(routes, utils){
       }, null, true, 'America/Los_Angeles');
     },
     syncProducts : function(conn){
+      var cloudinary = require('cloudinary');
+
       shopify.getAllProducts().then(function(products){
-        utils.log('executing product update');
 
         var promiseArray = new Array();
         var variantArray = new Array();
+        var existingImages = new Array();
 
         for(var i = 0; i<products.length; i++){
           for(var x = 0; x <products[i].variants.length; x++){
             variantArray.push(products[i].variants[x].id);
           }
+          for(var x = 0; x < products[i].images.length; x++){
+            existingImages.push(products[i].images[x].id);
+          }
         }
 
-
         var getMetafields = function(index){
-          utils.log('getting metafields');
           setTimeout(function(){
             if(index < variantArray.length){
               promiseArray.push(shopify.getVariantMetafields(variantArray[index]));
@@ -79,18 +82,47 @@ module.exports = function(routes, utils){
         }
 
         var finalize = function(){
-          utils.log('finalizing');
           Promise.all(promiseArray).then(function(metadata){
             var body = {
               "products" : products,
               "metadata" : metadata
             };
-            utils.log(body);
             conn.apex.put('/Product/', body);
           }, function(err){
             onError(err, res);
           });
         }
+
+        var deletingImages = new Array();
+        var total;
+        var deleteUnusedImages = function(next_cursor){
+          var params = {max_results : 500};
+          if(next_cursor)
+            params.next_cursor = next_cursor;
+
+          cloudinary.api.resources(
+            function(result){
+              total = result.resources.length;
+              for(var i = 0; i<result.resources.length; i++){
+                var found = false;
+                for(var x = 0; x<existingImages.length; x++){
+                  if(existingImages[x] == result.resources[i].public_id)
+                    found = true;
+                }
+                if(!found)
+                  deletingImages.push(result.resources[i].public_id);
+              }
+              if(result.next_cursor)
+                getAllImages(result.next_cursor);
+              else
+                cloudinary.api.delete_resources(deletingImages, function(result){
+                  console.log('deleted ' + deletingImages.length + ' images');
+                });
+            },
+            params
+          )
+        }
+        deleteUnusedImages();
 
         getMetafields(0);
       }, function(err){
