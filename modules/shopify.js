@@ -316,8 +316,10 @@ module.exports = function(utils, conn){
     },
 
     getProduct : function(shopifyId){
+      var productModule = require('../modules/product')(utils, conn);
       return new Promise(function(resolve, reject){
         doCallout('GET', 'products/' + shopifyId + '.json').then(function(body){
+          productModule.generateThumbnails(body.product);
           resolve(body.product);
         }, reject);
       });
@@ -332,10 +334,39 @@ module.exports = function(utils, conn){
     },
 
     getAllProducts : function(){
+      var productModule = require('../modules/product')(utils, conn);
       return new Promise(function(resolve, reject){
-        doCallout('GET', 'products.json?limit=250').then(function(body){
-          resolve(body.products);
-        }, reject);
+
+        var promiseArray = new Array();
+        var productArray = new Array();
+
+        var getProducts = function(page){
+          var productCount;
+          setTimeout(function(){
+            promiseArray.push(new Promise(function(r, j){
+              doCallout('GET', 'products.json?limit=250&page=' + page).then(function(body){
+                if(body.products){
+                  productCount = body.products.length;
+                  for(var i = 0; i<body.products.length; i++){
+                    productModule.generateThumbnails(body.products[i]);
+                  }
+                  productArray = productArray.concat(body.products);
+                }
+                r();
+              }, j);
+            }));
+            if(productCount && productCount > 0)
+              getProducts(page + 1);
+            else
+              finalize();
+          }, 500);
+        }
+        var finalize = function(){
+          Promise.all(promiseArray).then(function(){
+            resolve(productArray);
+          }, reject);
+        }
+        getProducts(0);
       });
 
     },
