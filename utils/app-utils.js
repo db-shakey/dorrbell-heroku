@@ -1,10 +1,8 @@
 module.exports = function(crypto, jwt){
 
-	var password = 'd00rb3ll_secret';
 	var algorithm = 'aes-256-ctr';
-	var token = 'Basic Z14vbjcyayxOdUpnM0pfXw==';
-	var sfToken = 'BASIC flAuOXUvdyJQZ0ZxJUNMag==';
-	var shopify_key = '5c93443153ae4d621d78b67355df7e41';
+	var keys = require('../modules/keys')();
+
 	var io;
 
 	return {
@@ -25,30 +23,30 @@ module.exports = function(crypto, jwt){
 			return false;
 		},
 		checkToken : function(req){
-			return req.headers['authorization'] == token;
+			return req.headers['authorization'] == keys.token;
 		},
 		checkSfToken : function(req){
-			return req.headers['authorization'] == sfToken;
+			return req.headers['authorization'] == keys.sfToken;
 		},
 		encryptText : function(text){
-			var cipher = crypto.createCipher(algorithm,password)
+			var cipher = crypto.createCipher(algorithm,keys.password)
 		    var crypted = cipher.update(text,'utf8','hex')
      		crypted += cipher.final('hex');
 	  		return crypted;
 		},
 		decryptText : function(text){
-			var decipher = crypto.createDecipher(algorithm,password)
+			var decipher = crypto.createDecipher(algorithm,keys.password)
 			var dec = decipher.update(text,'hex','utf8')
 			dec += decipher.final('utf8');
 			return dec;
 		},
 		signUser : function(user){
-			return jwt.sign(user, password, {
+			return jwt.sign(user, keys.password, {
       			expiresInMinutes : 1440 //24 hours
     		});
 		},
 		getPassword : function(){
-			return password;
+			return keys.password;
 		},
 		setSocketServer : function(socketServer){
 			io = socketServer;

@@ -39,7 +39,8 @@ var conn = new jsforce.Connection({
 });
 var socketServer;
 
-conn.login('shakey@dorrbell.com', 'Seketha3OcPjDdJZZOaB9LEGuQs2lnwwm', function(err, res){
+var keys = require('./modules/keys')();
+conn.login(keys.sfUsername, keys.sfPassword, function(err, res){
     if(err){return console.error(err);}
 });
 

@@ -1,6 +1,4 @@
 module.exports = function(utils, conn){
-  var apiKey = '12ad97558a61e66e2b4bde6dd8f97cd9';
-  var password = 'e465022f2fbf924b05f710f403758345';
   var http = require('https');
 
   Array.prototype.contains = function(v) {
@@ -21,10 +19,10 @@ module.exports = function(utils, conn){
 
   var doCallout = function(method, path, postData){
     var req = require('request');
-
+    var keys = require('./keys')();
     return new Promise(function(resolve, reject){
       req({
-        uri : 'https://' + apiKey + ':' + password + '@homefit.myshopify.com/admin/' + path,
+        uri : keys.shopifyUrl() + '/admin/' + path,
         method : method,
         body : postData,
         json : true
