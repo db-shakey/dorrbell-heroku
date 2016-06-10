@@ -15,6 +15,7 @@ module.exports = function(){
 		},
 
 		joinRooms : function(obj, socketId, socket){
+			utils.log(connectionArray);
 			if(!socket){
 				for(var i=0; i< connectionArray.length; i++){
 					if(connectionArray[i].id == socketId){
@@ -25,13 +26,8 @@ module.exports = function(){
 			}
 
 			for (var p in obj) {
-				console.log(1);
 		        if (obj.hasOwnProperty(p)) {
 		            if (p === "Id" || this.isSalesforceId(obj[p])) {
-									console.log(socket);
-									console.log(obj);
-									console.log(p);
-									console.log(obj[p]);
 		            	socket.join(obj[p]);
 		            } else if (obj[p] instanceof Object) {
 		                this.joinRooms(obj[p], socketId, socket);
