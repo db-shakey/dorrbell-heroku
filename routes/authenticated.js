@@ -580,19 +580,14 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	});
 
 	apiRoutes.post('/addImage', upload.single('product'), function(req, res){
-		utils.log(req.headers['x-to-endpoint'] + '/uploads/' + req.file.filename);
 		shopify.createProductImage({
 			src : req.headers['x-to-endpoint'] + '/uploads/' + req.file.filename
 		}, req.file.originalname).then(function(res){
-			utils.log('here 2');
-			fs.unlink('public/uploads/' + req.file.filename, function(e){
-				utils.log(e);
-			});
-			res.status(200).send(res);
+			fs.unlink('public/uploads/' + req.file.filename, function(e){});
+			res.status(200).send();
 		}, function(err){
-			utils.log('here');
 			fs.unlink('public/uploads/' + req.file.filename, function(){});
-			onError(err, response);
+			onError(err, res);
 		});
 	})
 

@@ -20,7 +20,6 @@ module.exports = function(utils, conn){
   var doCallout = function(method, path, postData){
     var req = require('request');
     var keys = require('./keys')();
-    utils.log(postData);
     return new Promise(function(resolve, reject){
       req({
         uri : keys.shopifyUrl() + '/admin/' + path,
