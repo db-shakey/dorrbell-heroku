@@ -579,15 +579,15 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 		});
 	});
 
-	apiRoutes.post('/addImage', upload.single('product'), function(req, res){
+	apiRoutes.post('/addImage', upload.single('product'), function(req, response){
 		shopify.createProductImage({
 			src : req.headers['x-to-endpoint'] + '/uploads/' + req.file.filename
 		}, req.file.originalname).then(function(res){
 			fs.unlink('public/uploads/' + req.file.filename, function(e){});
-			res.status(200).send();
+			response.status(200).send(res);
 		}, function(err){
 			fs.unlink('public/uploads/' + req.file.filename, function(){});
-			onError(err, res);
+			onError(err, response);
 		});
 	})
 
