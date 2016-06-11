@@ -10,7 +10,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 	var storage = multer.diskStorage({
 	  destination: function (req, file, cb) {
-			var dir = '../public/uploads/';
+			var dir = 'public/uploads/';
 			if (!fs.existsSync(dir)){
 			    fs.mkdirSync(dir);
 			}
