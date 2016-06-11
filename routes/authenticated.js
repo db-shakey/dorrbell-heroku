@@ -580,6 +580,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	});
 
 	apiRoutes.post('/addImage', upload.single('product'), function(req, res){
+		utils.log(req.headers['x-forwarded-proto']);
 		shopify.createProductImage({
 			src : req.headers['x-forwarded-proto'] + '/uploads/' + req.file.filename
 		}, req.file.originalname).then(function(res){
