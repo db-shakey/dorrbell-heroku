@@ -27,6 +27,8 @@ module.exports = function(utils, conn){
         body : postData,
         json : true
       }, function(err, res, body){
+        utils.log(body);
+        utils.log(err);
         if(!err && (body && !body.errors))
           resolve(body);
         else if(body && body.errors){
