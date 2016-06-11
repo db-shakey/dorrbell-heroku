@@ -3,7 +3,26 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	var globalDescribe;
 	var updated = {};
 
+	var crypto = require('crypto');
 	var shopify = require('../modules/shopify')(utils, conn);
+	var multer = require('multer');
+	var fs = require('fs');
+
+	var storage = multer.diskStorage({
+	  destination: function (req, file, cb) {
+			var dir = 'public/uploads/';
+			if (!fs.existsSync(dir)){
+			    fs.mkdirSync(dir);
+			}
+	    cb(null, dir);
+	  },
+	  filename: function (req, file, cb) {
+	    crypto.pseudoRandomBytes(16, function (err, raw) {
+	      cb(null, raw.toString('hex') + Date.now() + '.png');
+	    });
+	  }
+	});
+	var upload = multer({ storage: storage });
 
 	var onError = function(err, response){
 		utils.log('----------ERROR------------');
@@ -559,6 +578,18 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 			onError(err, response);
 		});
 	});
+
+	apiRoutes.post('/addImage', upload.single('product'), function(req, response){
+		shopify.createProductImage({
+			src : req.headers['x-to-endpoint'] + '/uploads/' + req.file.filename
+		}, req.file.originalname).then(function(res){
+			fs.unlink('public/uploads/' + req.file.filename, function(e){});
+			response.status(200).send(res);
+		}, function(err){
+			fs.unlink('public/uploads/' + req.file.filename, function(){});
+			onError(err, response);
+		});
+	})
 
 	apiRoutes.post('/shopify/createImage', function(request, response){
 		shopify.createProductImage(request.body.image, request.body.productId).then(function(res){
