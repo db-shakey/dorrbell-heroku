@@ -7,11 +7,10 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	var shopify = require('../modules/shopify')(utils, conn);
 	var multer = require('multer');
 	var fs = require('fs');
-	var path = require('path');
 
 	var storage = multer.diskStorage({
 	  destination: function (req, file, cb) {
-			var dir = path.join(__dirname + 'public/uploads/');
+			var dir = 'public/uploads/';
 			if (!fs.existsSync(dir)){
 			    fs.mkdirSync(dir);
 			}
