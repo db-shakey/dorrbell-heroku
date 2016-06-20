@@ -134,7 +134,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 				conn.search(query, function(err, res){
 					if(!err && res && res.length > 0){
 						whereClause = "Id IN ("
-						for(var i in res){
+						for(var i = 0; i<res.length; i++){
 							if(res[i].Id)
 								whereClause += "'" + res[i].Id + "', "
 						}
@@ -196,7 +196,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 				conn.search(query, function(err, res){
 					if(!err && res && res.length > 0){
 						whereClause = "Id IN ("
-						for(var i in res){
+						for(var i = 0; i<res.length; i++){
 							if(res[i].Id)
 								whereClause += "'" + res[i].Id + "', "
 						}

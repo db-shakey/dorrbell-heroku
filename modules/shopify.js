@@ -89,7 +89,7 @@ module.exports = function(utils, conn){
         return new Promise(function(resolve, reject){
           var getOptionValue = function(name, product){
             var value;
-            for(var i in product.Product_Options__r.records){
+            for(var i = 0; i<product.Product_Options__r.records.length; i++){
               var o = product.Product_Options__r.records[i];
               if(o.Option__r && o.Option__r.Name == name)
                 value = o.Value__c;
@@ -121,7 +121,7 @@ module.exports = function(utils, conn){
           var promiseArray = new Array();
           var metaFieldArray = ['metaprice', 'metalistprice', 'metalistpricecurrent'];
 
-          for(var i in data.metafields.metafields){
+          for(var i = 0; i<data.metafields.metafields.length; i++){
             var index = metaFieldArray.indexOf(data.metafields.metafields[i].key);
             if(index >= 0)
               metaFieldArray.splice(index, 1);
@@ -134,7 +134,7 @@ module.exports = function(utils, conn){
             }));
           }
 
-          for(var i in metaFieldArray){
+          for(var i=0; i<metaFieldArray.length; i++){
             promiseArray.push(new Promise(function(resolveMeta, rejectMeta){
               doCallout('POST', 'variants/' + product.Shopify_Id__c + '/metafields.json', {
                 "metafield" : {
@@ -264,7 +264,7 @@ module.exports = function(utils, conn){
         doCallout('GET', 'products.json?fields=product_type').then(function(body){
           var distinct = new Array();
           var products = body.products;
-          for(var i in products){
+          for(var i = 0; i<products.length; i++){
             if(products[i].product_type && products[i].product_type != null)
               distinct.push(products[i].product_type);
           }
@@ -278,7 +278,7 @@ module.exports = function(utils, conn){
         doCallout('GET', 'products.json?fields=tags').then(function(body){
           var distinct = new Array();
           var products = body.products;
-          for(var i in products){
+          for(var i = 0; i<products.length; i++){
             if(products[i].tags && products[i].tags != null){
               var productTags = products[i].tags.split(", ");
               distinct = distinct.concat(productTags);
@@ -293,7 +293,7 @@ module.exports = function(utils, conn){
       return new Promise(function(resolve, reject){
         doCallout('GET', 'variants.json?fields=option1').then(function(body){
           var distinct = new Array();
-          for(var i in body.variants){
+          for(var i = 0; i<body.variants.length; i++){
             if(body.variants[i].option1 && body.variants[i].option1 != null)
               distinct.push(body.variants[i].option1);
           }
@@ -306,7 +306,7 @@ module.exports = function(utils, conn){
       return new Promise(function(resolve, reject){
         doCallout('GET', 'variants.json?fields=option2').then(function(body){
           var distinct = new Array();
-          for(var i in body.variants){
+          for(var i = 0; i<body.variants.length; i++){
             if(body.variants[i].option2 && body.variants[i].option2 != null)
               distinct.push(body.variants[i].option2);
           }
