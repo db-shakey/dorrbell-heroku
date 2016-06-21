@@ -122,19 +122,21 @@ module.exports = function(utils, conn){
         return new Promise(function(resolve, reject){
           var promiseArray = new Array();
           var metaFieldArray = ['metaprice', 'metalistprice', 'metalistpricecurrent'];
+          if(data.metafields && data.metafields.metafields && data.metafields.metafields.length){
+            for(var i = 0; i<data.metafields.metafields.length; i++){
+              var index = metaFieldArray.indexOf(data.metafields.metafields[i].key);
+              if(index >= 0)
+                metaFieldArray.splice(index, 1);
 
-          for(var i = 0; i<data.metafields.metafields.length; i++){
-            var index = metaFieldArray.indexOf(data.metafields.metafields[i].key);
-            if(index >= 0)
-              metaFieldArray.splice(index, 1);
-
-            promiseArray.push(new Promise(function(resolveMeta, rejectMeta){
-              data.metafields.metafields[i].value = product.PricebookEntries.records[0].UnitPrice * 100;
-              doCallout('PUT', 'metafields/' + data.metafields.metafields[i].id + '.json', {
-                "metafield" : data.metafields.metafields[i]
-              }).then(resolveMeta, rejectMeta);
-            }));
+              promiseArray.push(new Promise(function(resolveMeta, rejectMeta){
+                data.metafields.metafields[i].value = product.PricebookEntries.records[0].UnitPrice * 100;
+                doCallout('PUT', 'metafields/' + data.metafields.metafields[i].id + '.json', {
+                  "metafield" : data.metafields.metafields[i]
+                }).then(resolveMeta, rejectMeta);
+              }));
+            }
           }
+
 
           for(var i=0; i<metaFieldArray.length; i++){
             promiseArray.push(new Promise(function(resolveMeta, rejectMeta){
