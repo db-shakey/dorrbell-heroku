@@ -36,7 +36,8 @@ var sfRoutes = express.Router();
 
 
 var conn = new jsforce.Connection({
-    maxRequest : 50
+    maxRequest : 50,
+    loginUrl : keys.sfLoginUrl
 });
 var socketServer;
 
