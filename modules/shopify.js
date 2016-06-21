@@ -87,10 +87,12 @@ module.exports = function(utils, conn){
         return new Promise(function(resolve, reject){
           var getOptionValue = function(name, product){
             var value;
-            for(var i = 0; i<product.Product_Options__r.records.length; i++){
-              var o = product.Product_Options__r.records[i];
-              if(o.Option__r && o.Option__r.Name == name)
-                value = o.Value__c;
+            if(product.Product_Options__r.records && product.Product_Options__r.records.length){
+              for(var i = 0; i<product.Product_Options__r.records.length; i++){
+                var o = product.Product_Options__r.records[i];
+                if(o.Option__r && o.Option__r.Name == name)
+                  value = o.Value__c;
+              }
             }
             return value;
           }
@@ -304,9 +306,11 @@ module.exports = function(utils, conn){
       return new Promise(function(resolve, reject){
         doCallout('GET', 'variants.json?fields=option2').then(function(body){
           var distinct = new Array();
-          for(var i = 0; i<body.variants.length; i++){
-            if(body.variants[i].option2 && body.variants[i].option2 != null)
-              distinct.push(body.variants[i].option2);
+          if(body.variants && body.variants.length){
+            for(var i = 0; i<body.variants.length; i++){
+              if(body.variants[i].option2 && body.variants[i].option2 != null)
+                distinct.push(body.variants[i].option2);
+            }
           }
           resolve(distinct.unique());
         }, reject);
