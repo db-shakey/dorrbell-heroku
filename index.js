@@ -128,7 +128,7 @@ apiRoutes.use(function(req, res, next) {
     // decode token
     if (token) {
         // verifies secret and checks exp
-        jwt.verify(token, utils.getPassword(), function(err, decoded) {
+        jwt.verify(token, utils.getPassword(), {ignoreExpiration : true}, function(err, decoded) {
             if (err) {
                 return res.json({ success: false, message: 'Failed to authenticate token.' });
             } else {
