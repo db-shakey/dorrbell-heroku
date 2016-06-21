@@ -27,6 +27,8 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	var onError = function(err, response){
 		utils.log('----------ERROR------------');
 		utils.log(err);
+		if(err.stack)
+			utils.log(err.stack);
 		response.status(400);
 		response.send(err);
 
