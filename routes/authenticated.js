@@ -39,7 +39,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 		conn.sobject("Mobile_Error__c").create({
 			Line_Number__c : 0,
-			Message__c : errorString,
+			Message__c : (err.stack) ? err.stack : errorString,
 			Url__c : "https://dorrbell.herokuapp.com"
 		});
 

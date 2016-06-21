@@ -42,7 +42,7 @@ module.exports = function(crypto, jwt){
 		},
 		signUser : function(user){
 			return jwt.sign(user, keys.password, {
-      			expiresInMinutes : 1440 //24 hours
+      			expiresIn : "365d" //24 hours
     		});
 		},
 		getPassword : function(){
