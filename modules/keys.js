@@ -8,8 +8,8 @@ module.exports = function(){
     token : 'Basic Z14vbjcyayxOdUpnM0pfXw==',
     sfToken : 'BASIC flAuOXUvdyJQZ0ZxJUNMag==',
     shopify_key : '795027ada3cf89abf34972a81301ef1c00db9671546fc890649ac07e4bedc62b',
-    sfUsername : 'shakey@dorrbell.com',
-    sfPassword : 'Seketha3OcPjDdJZZOaB9LEGuQs2lnwwm',
+    sfUsername : 'christopher.moyle@dorrbell.com.staging',
+    sfPassword : 'dzq84K2JfjCtdBtQmQp1weuIW99q0rrd',
     shopifyUrl : function(){
       return 'https://' + this.shopifyApiKey + ':' + this.shopifyPassword + '@' + this.shopifyEndpoint;
     }
