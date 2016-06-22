@@ -30,10 +30,10 @@ module.exports = function(utils, conn){
         if(!err && (body && !body.errors))
           resolve(body);
         else if(body && body.errors){
-          reject([body.errors, method, postData]);
+          reject([body.errors, method, path, postData]);
         }
         else if(err)
-          reject([err, method, postData]);
+          reject([err, method, path, postData]);
         else
           resolve();
       });
