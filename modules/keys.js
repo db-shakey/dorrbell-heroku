@@ -9,7 +9,7 @@ module.exports = function(){
     sfToken : 'BASIC flAuOXUvdyJQZ0ZxJUNMag==',
     shopify_key : '5c93443153ae4d621d78b67355df7e41',
     sfUsername : 'christopher.moyle@dorrbell.com',
-    sfPassword : 'dzq84K2JQLaQbcnzwvxw9qylGljuRG4bq',
+    sfPassword : 'dzq84K2J0hRUjWsi6WzgwbFnnUgJkjaiy',
     shopifyUrl : function(){
       return 'https://' + this.shopifyApiKey + ':' + this.shopifyPassword + '@' + this.shopifyEndpoint;
     }
