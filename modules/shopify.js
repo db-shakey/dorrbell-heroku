@@ -32,10 +32,10 @@ module.exports = function(utils, conn){
         if(!err && (body && !body.errors))
           resolve(body);
         else if(body && body.errors){
-          reject(body.errors);
+          reject([body.errors, method, path, postData]);
         }
         else if(err)
-          reject(err);
+          reject([err, method, path, postData]);
         else
           resolve();
       });
