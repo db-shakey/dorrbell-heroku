@@ -185,7 +185,6 @@ module.exports = function(apiRoutes, conn, utils){
 			'LastName' : req.body.last_name,
 			'Email' : req.body.email,
 			'Status__c' : 'Enabled',
-			'Password__c' : (req.body.accessToken) ? utils.encryptText(req.body.accessToken) : '',
 			'Username__c' : req.body.email,
 			'MailingCity' : req.body.location.location.city,
 			'MailingState' : req.body.location.location.state,
@@ -198,10 +197,6 @@ module.exports = function(apiRoutes, conn, utils){
 		var fail = function(err){
 			res.status(400).json({success : false, message : err});
 		}
-
-		conn.sobject("SocialPersona").create({
-
-		})
 
 		conn.query("SELECT Id FROM RecordType WHERE DeveloperName = 'Dorrbell_Customer_Contact' AND sObjectType = 'Contact'").then(function(recordTypeResults){
 			if(recordTypeResults.records && recordTypeResults.records.length > 0){
