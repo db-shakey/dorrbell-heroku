@@ -223,7 +223,16 @@ module.exports = function(apiRoutes, conn, utils){
 		}).then(function(){
 			res.status(200).send();
 		}, fail);
+	})
 
+	apiRoutes.post("/assign-cart", function(req, res){
+		if(req.body.uid && req.body.cart){
+			conn.sobject("Cart__c").upsert({
+				Contact__r : {"Shopify_Id__c" : req.body.uid},
+				Shopify_Id__c : req.body.cart
+			});
+		}
+		res.status(200).send();
 	})
 
 };
