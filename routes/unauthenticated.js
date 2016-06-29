@@ -201,11 +201,11 @@ module.exports = function(apiRoutes, conn, utils){
 		conn.query("SELECT Id FROM RecordType WHERE DeveloperName = 'Dorrbell_Customer_Contact' AND sObjectType = 'Contact'").then(function(recordTypeResults){
 			if(recordTypeResults.records && recordTypeResults.records.length > 0){
 				contact.RecordTypeId = recordTypeResults.records[0].Id;
-				return conn.sobject("Contact").upsert(contact, 'External_Id__c').then(function(data){
+				return conn.sobject("Contact").upsert(contact, 'Username__c').then(function(data){
 					if(data && data.id){
 						return sfUtils.setProfilePhoto(conn, data.id, req.body.attachment);
 					}else{
-						return conn.query("SELECT Id FROM Contact WHERE External_Id__c = '" + req.body.id + "'").then(function(results){
+						return conn.query("SELECT Id FROM Contact WHERE Username__c = '" + req.body.email + "'").then(function(results){
 							if(results.records && results.records.length > 0)
 								return sfUtils.setProfilePhoto(conn, results.records[0].Id, req.body.attachment);
 						});
