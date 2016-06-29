@@ -179,7 +179,7 @@ module.exports = function(apiRoutes, conn, utils){
 	apiRoutes.post('/fb-register', function(req, res){
 		var sfUtils = require('./utils')();
 		var contact = {
-			'Shopify_Customer_ID__c' : req.body.id,
+			'Shopify_Customer_ID__c' : req.body.uid,
 			'Gender__c' : req.body.gender,
 			'FirstName' : req.body.first_name,
 			'LastName' : req.body.last_name,
@@ -199,9 +199,6 @@ module.exports = function(apiRoutes, conn, utils){
 		if(req.body.birthday)
 			contact.Birthdate = new Date( req.body.birthday.replace( /(\d{2})[-/](\d{2})[-/](\d{4})/, "$3-$1-$2") );
 
-
-
-		console.log(contact);
 		var fail = function(err){
 			utils.log(err);
 			res.status(400).json({success : false, message : err});
@@ -211,7 +208,6 @@ module.exports = function(apiRoutes, conn, utils){
 			if(recordTypeResults.records && recordTypeResults.records.length > 0){
 				contact.RecordTypeId = recordTypeResults.records[0].Id;
 				return conn.sobject("Contact").upsert(contact, 'Username__c').then(conn.query("SELECT Id FROM Contact WHERE Username__c = '" + req.body.email + "'").then(function(data){
-
 					var social = {
 						ExternalId : req.body.id,
 						External_Id__c : req.body.id,
