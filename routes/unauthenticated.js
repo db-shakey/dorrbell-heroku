@@ -191,7 +191,8 @@ module.exports = function(apiRoutes, conn, utils){
 			'MailingState' : req.body.location.location.state,
 			'MailingCountry' : req.body.location.location.country,
 			'MailingLatitude' : req.body.location.location.latitude,
-			'MailingLongitude' : req.body.location.location.longitude
+			'MailingLongitude' : req.body.location.location.longitude,
+			"PhotoUrl" : req.body.photoUrl
 		};
 		console.log(contact);
 		var fail = function(err){
@@ -201,16 +202,7 @@ module.exports = function(apiRoutes, conn, utils){
 		conn.query("SELECT Id FROM RecordType WHERE DeveloperName = 'Dorrbell_Customer_Contact' AND sObjectType = 'Contact'").then(function(recordTypeResults){
 			if(recordTypeResults.records && recordTypeResults.records.length > 0){
 				contact.RecordTypeId = recordTypeResults.records[0].Id;
-				return conn.sobject("Contact").upsert(contact, 'Username__c').then(function(data){
-					if(data && data.id){
-						return sfUtils.setProfilePhoto(conn, data.id, req.body.attachment);
-					}else{
-						return conn.query("SELECT Id FROM Contact WHERE Username__c = '" + req.body.email + "'").then(function(results){
-							if(results.records && results.records.length > 0)
-								return sfUtils.setProfilePhoto(conn, results.records[0].Id, req.body.attachment);
-						});
-					}
-				});
+				return conn.sobject("Contact").upsert(contact, 'Username__c');
 			}
 		}).then(function(){
 			res.status(200).send();
