@@ -73,6 +73,7 @@ module.exports = function(route, conn, utils){
         MailingPostalCode : defaultAddress.zip,
         MailingState : defaultAddress.province,
         Email : contact.email,
+        Username__c : contact.email,
         Shopify_Customer_ID__c : contact.id,
         FirstName : contact.first_name,
         LastName : contact.last_name,
@@ -82,7 +83,7 @@ module.exports = function(route, conn, utils){
         Email_Verified__c : contact.verified_email,
         Total_Spent__c : contact.total_spent,
         Tax_Exempt__c : contact.tax_exempt
-      }, 'Shopify_Customer_ID__c', function(err, ret){
+      }, 'Username__c', function(err, ret){
         if(err)
           utils.log(err);
         else
@@ -91,4 +92,11 @@ module.exports = function(route, conn, utils){
     }
   });
 
+  /**************************
+	 * Cart
+	 *************************/
+  route.post('/cart/:route', function(req, res){
+    utils.log(req.body);
+    res.status(200).send();
+  });
 };
