@@ -72,6 +72,7 @@ module.exports = function(utils, conn){
             metadata : metadata,
             transactions : (results[1]) ? results[1].transactions : null
           };
+          utils.log(body);
           return conn.apex.post('/Order/', body);
         });
       });

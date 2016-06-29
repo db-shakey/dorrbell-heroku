@@ -179,7 +179,7 @@ module.exports = function(apiRoutes, conn, utils){
 	apiRoutes.post('/fb-register', function(req, res){
 		var sfUtils = require('./utils')();
 		var contact = {
-			'External_Id__c' : req.body.id,
+			'Shopify_Customer_ID__c' : req.body.id,
 			'Gender__c' : req.body.gender,
 			'FirstName' : req.body.first_name,
 			'LastName' : req.body.last_name,
@@ -191,24 +191,38 @@ module.exports = function(apiRoutes, conn, utils){
 			'MailingCountry' : req.body.location.location.country,
 			'MailingLatitude' : req.body.location.location.latitude,
 			'MailingLongitude' : req.body.location.location.longitude,
-			"PhotoUrl" : req.body.photoUrl
 		};
+
+		if(req.body.devices && req.body.devices.length > 0)
+			contact.Device_Operating_System__c = req.body.devices[0].os;
+
+		if(req.body.birthday)
+			contact.Birthdate = new Date( req.body.birthday.replace( /(\d{2})[-/](\d{2})[-/](\d{4})/, "$3-$1-$2") );
+
+
+
 		console.log(contact);
 		var fail = function(err){
+			utils.log(err);
 			res.status(400).json({success : false, message : err});
 		}
 
 		conn.query("SELECT Id FROM RecordType WHERE DeveloperName = 'Dorrbell_Customer_Contact' AND sObjectType = 'Contact'").then(function(recordTypeResults){
 			if(recordTypeResults.records && recordTypeResults.records.length > 0){
 				contact.RecordTypeId = recordTypeResults.records[0].Id;
-				return conn.sobject("Contact").upsert(contact, 'Username__c').then(function(data){
-						return conn.sobject("SocialPersona").create({
-							ExternalId : req.body.id,
-							ExternalPictureUrl : req.body.photoUrl,
-							ParentId : data.Id,
-							Provider : req.body.provider
-						});
-				});
+				return conn.sobject("Contact").upsert(contact, 'Username__c').then(conn.query("SELECT Id FROM Contact WHERE Username__c = '" + req.body.email + "'").then(function(data){
+
+					var social = {
+						ExternalId : req.body.id,
+						External_Id__c : req.body.id,
+						ExternalPictureUrl : req.body.photoUrl,
+						ParentId : data.records[0].Id,
+						Name : req.body.first_name + ' ' + req.body.last_name,
+						IsDefault : true,
+						Provider : req.body.provider
+					};
+					return conn.sobject("SocialPersona").upsert(social, "External_Id__c");
+				}));
 			}
 		}).then(function(){
 			res.status(200).send();

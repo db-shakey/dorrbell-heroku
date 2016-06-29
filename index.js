@@ -15,7 +15,7 @@ var path          = require('path');
 var app = express();
 var keys = require('./modules/keys')();
 
-app.set('port', (process.env.PORT || 5000));
+app.set('port', (process.env.PORT || 5050));
 app.use(express.static('public'));
 
 
