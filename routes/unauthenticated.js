@@ -199,10 +199,21 @@ module.exports = function(apiRoutes, conn, utils){
 			res.status(400).json({success : false, message : err});
 		}
 
+		conn.sobject("SocialPersona").create({
+
+		})
+
 		conn.query("SELECT Id FROM RecordType WHERE DeveloperName = 'Dorrbell_Customer_Contact' AND sObjectType = 'Contact'").then(function(recordTypeResults){
 			if(recordTypeResults.records && recordTypeResults.records.length > 0){
 				contact.RecordTypeId = recordTypeResults.records[0].Id;
-				return conn.sobject("Contact").upsert(contact, 'Username__c');
+				return conn.sobject("Contact").upsert(contact, 'Username__c').then(function(data){
+						return conn.sobject("SocialPersona").create({
+							ExternalId : req.body.id,
+							ExternalPictureUrl : req.body.photoUrl,
+							ParentId : data.Id,
+							Provider : req.body.provider
+						});
+				});
 			}
 		}).then(function(){
 			res.status(200).send();
