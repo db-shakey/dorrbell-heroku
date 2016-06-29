@@ -228,7 +228,7 @@ module.exports = function(apiRoutes, conn, utils){
 	apiRoutes.post("/assign-cart", function(req, res){
 		if(req.body.uid && req.body.cart){
 			conn.sobject("Cart__c").upsert({
-				Contact__r : {"Shopify_Id__c" : req.body.uid},
+				Contact__r : {"Shopify_Customer_ID__c" : req.body.uid},
 				Shopify_Id__c : req.body.cart
 			}, "Shopify_Id__c").then(function(res){utils.log(res);}, function(err){utils.log(err);});
 		}
