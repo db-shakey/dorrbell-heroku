@@ -97,6 +97,10 @@ module.exports = function(route, conn, utils){
 	 *************************/
   route.post('/cart/:route', function(req, res){
     utils.log(req.body);
+    var body = {
+      cart : req.body
+    };
+    conn.apex.post('/Cart/', body);
     res.status(200).send();
   });
 };
