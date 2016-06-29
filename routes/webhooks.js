@@ -62,8 +62,6 @@ module.exports = function(route, conn, utils){
       }, 'Shopify_Customer_ID__c', function(err, ret){
         if(err)
           utils.log(err);
-        else
-          res.status(200).send();
       });
     }else{
       conn.sobject("Contact").upsert({
@@ -86,10 +84,9 @@ module.exports = function(route, conn, utils){
       }, 'Username__c', function(err, ret){
         if(err)
           utils.log(err);
-        else
-          res.status(200).send();
       });
     }
+    res.status(200).send();
   });
 
   /**************************

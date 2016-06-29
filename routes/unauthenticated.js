@@ -230,7 +230,7 @@ module.exports = function(apiRoutes, conn, utils){
 			conn.sobject("Cart__c").upsert({
 				Contact__r : {"Shopify_Id__c" : req.body.uid},
 				Shopify_Id__c : req.body.cart
-			});
+			}).then(function(res{utils.log(res);}, function(err){utils.log(err);}));
 		}
 		res.status(200).send();
 	})
