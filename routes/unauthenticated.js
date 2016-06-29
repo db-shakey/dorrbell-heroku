@@ -185,7 +185,7 @@ module.exports = function(apiRoutes, conn, utils){
 			'LastName' : req.body.last_name,
 			'Email' : req.body.email,
 			'Status__c' : 'Enabled',
-			'Password__c' : utils.encryptText(req.body.accessToken),
+			'Password__c' : (req.body.accessToken) ? utils.encryptText(req.body.accessToken) : '',
 			'Username__c' : req.body.email,
 			'MailingCity' : req.body.location.location.city,
 			'MailingState' : req.body.location.location.state,
