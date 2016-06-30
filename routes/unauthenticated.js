@@ -178,13 +178,21 @@ module.exports = function(apiRoutes, conn, utils){
 
 	apiRoutes.post('/fb-register', function(req, res){
 		var sfUtils = require('./utils')();
+		var google = require('../modules/google')(utils);
+		var success = function(){
+			res.status(200).send();
+		}
+		var fail = function(err){
+			utils.log(err);
+			res.status(400).send(err);
+		}
 		var contact = {
 			'Shopify_Customer_ID__c' : req.body.uid,
 			'Gender__c' : req.body.gender,
 			'FirstName' : req.body.first_name,
 			'LastName' : req.body.last_name,
 			'Email' : req.body.email,
-			'Status__c' : 'Enabled',
+			'Status__c' : 'Active',
 			'Username__c' : req.body.email,
 			'MailingCity' : req.body.location.location.city,
 			'MailingState' : req.body.location.location.state,
@@ -193,46 +201,73 @@ module.exports = function(apiRoutes, conn, utils){
 			'MailingLongitude' : req.body.location.location.longitude,
 		};
 
-		if(req.body.devices && req.body.devices.length > 0)
-			contact.Device_Operating_System__c = req.body.devices[0].os;
+		var geocodePromise = new Promise(function(resolve, reject){
+			google.reverseGeocode(req.body.location.location.latitude, req.body.location.location.longitude).then(function(response){
+				var postalCode;
+				for(var i = 0; i<response.results.length; i++){
+					for(var x = 0; x <response.results[i].address_components.length; x++){
+						for(var z = 0; z <response.results[i].address_components[x].types.length; z++){
+							if(response.results[i].address_components[x].types[z] == "postal_code"){
+								postalCode = response.results[i].address_components[x].long_name || response.results[i].address_components[x].short_name;
+								break;
+							}
+						}
+						if(postalCode)
+							break;
+					}
+					if(postalCode)
+						break;
+				}
+				resolve(postalCode);
+			}, reject);
+		}).then(function(postalCode){
+			contact.MailingPostalCode = postalCode;
+			if(req.body.devices && req.body.devices.length > 0)
+				contact.Device_Operating_System__c = req.body.devices[0].os;
 
-		if(req.body.birthday)
-			contact.Birthdate = new Date( req.body.birthday.replace( /(\d{2})[-/](\d{2})[-/](\d{4})/, "$3-$1-$2") );
+			if(req.body.birthday)
+				contact.Birthdate = new Date( req.body.birthday.replace( /(\d{2})[-/](\d{2})[-/](\d{4})/, "$3-$1-$2") );
 
-		var fail = function(err){
-			utils.log(err);
-			res.status(400).json({success : false, message : err});
-		}
-
-		conn.query("SELECT Id FROM RecordType WHERE DeveloperName = 'Dorrbell_Customer_Contact' AND sObjectType = 'Contact'").then(function(recordTypeResults){
-			if(recordTypeResults.records && recordTypeResults.records.length > 0){
-				contact.RecordTypeId = recordTypeResults.records[0].Id;
-				return conn.sobject("Contact").upsert(contact, 'Username__c').then(conn.query("SELECT Id FROM Contact WHERE Username__c = '" + req.body.email + "'").then(function(data){
-					var social = {
-						ExternalId : req.body.id,
-						External_Id__c : req.body.id,
-						ExternalPictureUrl : req.body.photoUrl,
-						ParentId : data.records[0].Id,
-						Name : req.body.first_name + ' ' + req.body.last_name,
-						IsDefault : true,
-						Provider : req.body.provider
-					};
-					return conn.sobject("SocialPersona").upsert(social, "External_Id__c");
-				}));
-			}
-		}).then(function(){
-			res.status(200).send();
+			conn.query("SELECT Id FROM RecordType WHERE DeveloperName = 'Dorrbell_Customer_Contact' AND sObjectType = 'Contact'").then(function(recordTypeResults){
+				if(recordTypeResults.records && recordTypeResults.records.length > 0){
+					contact.RecordTypeId = recordTypeResults.records[0].Id;
+					return conn.sobject("Contact").upsert(contact, 'Username__c').then(conn.query("SELECT Id FROM Contact WHERE Username__c = '" + req.body.email + "'").then(function(data){
+						var social = {
+							ExternalId : req.body.id,
+							External_Id__c : req.body.id,
+							ExternalPictureUrl : req.body.photoUrl,
+							ParentId : data.records[0].Id,
+							Name : req.body.first_name + ' ' + req.body.last_name,
+							IsDefault : true,
+							Provider : req.body.provider
+						};
+						return conn.sobject("SocialPersona").upsert(social, "External_Id__c");
+					}));
+				}
+			}).then(success, fail);
 		}, fail);
 	})
 
-	apiRoutes.post("/assign-cart", function(req, res){
+	apiRoutes.post("/validate-user", function(req, res){
+		var success = function(){
+			res.status(200).send();
+		}
+		var fail = function(){
+			res.status(403).send();
+		}
 		if(req.body.uid && req.body.cart){
 			conn.sobject("Cart__c").upsert({
 				Contact__r : {"Shopify_Customer_ID__c" : req.body.uid},
 				Shopify_Id__c : req.body.cart
 			}, "Shopify_Id__c").then(function(res){utils.log(res);}, function(err){utils.log(err);});
 		}
-		res.status(200).send();
+		conn.query("SELECT Qualified__c FROM Contact WHERE Shopify_Customer_Id__c = '" + req.body.uid + "'").then(function(results){
+			utils.log(results);
+			if(results.records && results.records.length > 0 && results.records[0].Qualified__c === true)
+				success();
+			else
+				fail();
+		}, fail);
 	})
 
 };

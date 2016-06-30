@@ -23,6 +23,28 @@ module.exports = function(utils){
                 utils.log(e);
               });
             });
+        },
+
+        reverseGeocode : function(latitude, longitude){
+          return new Promise(function(resolve, reject){
+            var req = http.get({
+              host : 'maps.googleapis.com',
+              path : '/maps/api/geocode/json?key=' + key + '&latlng=' + latitude + ',' + longitude
+            }, function(response){
+              var body = '';
+              response.on('data', function(d){
+                body += d;
+              });
+              response.on('end', function(){
+                resolve(JSON.parse(body));
+              });
+              response.on('error', reject);
+            });
+            req.on('error', function(e) {
+              reject(e);
+              utils.log(e);
+            });
+          });
         }
     }
 
