@@ -176,97 +176,107 @@ module.exports = function(apiRoutes, conn, utils){
 		}
 	});
 
-	apiRoutes.post('/fb-register', function(req, res){
+	apiRoutes.post('/twitter-info', function(req, res){
+		var Twitter = require('twitter');
+		var fail = function(err){
+			res.status(400).send(err);
+		}
+		if(req.body.accessToken && req.body.secret && req.body.uid){
+			var client = new Twitter({
+				consumer_key : "07nSJGnNhAQ9wbYrA10hTof9A",
+				consumer_secret : "alIG7T1qyHRtGlnvFO8mrhWPaTHCCfIRFSkovHn3oSnlY67u5v",
+				access_token_key : req.body.accessToken,
+				access_token_secret : req.body.secret
+			});
+			client.get('users/show', {user_id : req.body.uid}, function(error, response){
+				if(error){
+					fail(error);
+				}else
+					res.status(200).send(response);
+			})
+		}else{
+			fail();
+		}
+	})
+
+	apiRoutes.post('/register', function(req, res){
 		var sfUtils = require('./utils')();
 		var google = require('../modules/google')(utils);
+		var qualified = false;
 		var success = function(){
-			res.status(200).send();
+			utils.log(qualified);
+			if(qualified)
+				res.status(200).send();
+			else
+				res.status(403).send();
 		}
 		var fail = function(err){
 			utils.log(err);
 			res.status(400).send(err);
 		}
+
 		var contact = {
-			'Shopify_Customer_ID__c' : req.body.uid,
 			'Gender__c' : req.body.gender,
-			'FirstName' : req.body.first_name,
-			'LastName' : req.body.last_name,
+			'FirstName' : req.body.firstName,
+			'LastName' : req.body.lastName,
 			'Email' : req.body.email,
 			'Status__c' : 'Active',
 			'Username__c' : req.body.email,
-			'MailingCity' : req.body.location.location.city,
-			'MailingState' : req.body.location.location.state,
-			'MailingCountry' : req.body.location.location.country,
-			'MailingLatitude' : req.body.location.location.latitude,
-			'MailingLongitude' : req.body.location.location.longitude,
+			'MailingStreet' : (req.body.address2) ? req.body.address + ' ' + req.body.address2 : req.body.address,
+			'MailingCity' : req.body.city,
+			'MailingState' : req.body.state,
+			'MailingPostalCode' : req.body.postalCode,
+			'Birthdate' : req.body.birthday,
+			'MobilePhone' : req.body.phone
 		};
 
-		var geocodePromise = new Promise(function(resolve, reject){
-			google.reverseGeocode(req.body.location.location.latitude, req.body.location.location.longitude).then(function(response){
-				var postalCode;
-				for(var i = 0; i<response.results.length; i++){
-					for(var x = 0; x <response.results[i].address_components.length; x++){
-						for(var z = 0; z <response.results[i].address_components[x].types.length; z++){
-							if(response.results[i].address_components[x].types[z] == "postal_code"){
-								postalCode = response.results[i].address_components[x].long_name || response.results[i].address_components[x].short_name;
-								break;
-							}
-						}
-						if(postalCode)
-							break;
-					}
-					if(postalCode)
-						break;
-				}
-				resolve(postalCode);
-			}, reject);
-		}).then(function(postalCode){
-			contact.MailingPostalCode = postalCode;
-			if(req.body.devices && req.body.devices.length > 0)
-				contact.Device_Operating_System__c = req.body.devices[0].os;
-
-			if(req.body.birthday)
-				contact.Birthdate = new Date( req.body.birthday.replace( /(\d{2})[-/](\d{2})[-/](\d{4})/, "$3-$1-$2") );
-
-			conn.query("SELECT Id FROM RecordType WHERE DeveloperName = 'Dorrbell_Customer_Contact' AND sObjectType = 'Contact'").then(function(recordTypeResults){
-				if(recordTypeResults.records && recordTypeResults.records.length > 0){
-					contact.RecordTypeId = recordTypeResults.records[0].Id;
-					return conn.sobject("Contact").upsert(contact, 'Username__c').then(conn.query("SELECT Id FROM Contact WHERE Username__c = '" + req.body.email + "'").then(function(data){
+		conn.query("SELECT Id FROM RecordType WHERE DeveloperName = 'Dorrbell_Customer_Contact' AND sObjectType = 'Contact'").then(function(recordTypeResults){
+			if(recordTypeResults.records && recordTypeResults.records.length > 0){
+				contact.RecordTypeId = recordTypeResults.records[0].Id;
+				return conn.sobject("Contact").upsert(contact, 'Username__c').then(function(){
+					return conn.query("SELECT Id, Qualified__c FROM Contact WHERE Username__c = '" + req.body.email + "'").then(function(data){
 						var social = {
-							ExternalId : req.body.id,
-							External_Id__c : req.body.id,
+							ExternalId : req.body.networkId,
+							External_Id__c : req.body.networkId,
 							ExternalPictureUrl : req.body.photoUrl,
 							ParentId : data.records[0].Id,
-							Name : req.body.first_name + ' ' + req.body.last_name,
+							Name : req.body.firstName + ' ' + req.body.lastName,
 							IsDefault : true,
 							Provider : req.body.provider
 						};
-						return conn.sobject("SocialPersona").upsert(social, "External_Id__c");
-					}));
-				}
-			}).then(success, fail);
-		}, fail);
+						qualified = data.records[0].Qualified__c;
+						return conn.sobject("SocialPersona").upsert(social, "External_Id__c").then(function(){
+							return conn.sobject("Firebase_Record__c").upsert(
+								{
+									Contact__c : data.records[0].Id,
+									UID__c : req.body.uid
+								}, 'UID__c');
+						}, fail);
+					}, fail);
+				}, fail);
+			}
+		}).then(success, fail);
 	})
 
 	apiRoutes.post("/validate-user", function(req, res){
-		var success = function(){
-			res.status(200).send();
-		}
 		var fail = function(){
 			res.status(403).send();
 		}
-		if(req.body.uid && req.body.cart){
-			conn.sobject("Cart__c").upsert({
-				Contact__r : {"Shopify_Customer_ID__c" : req.body.uid},
-				Shopify_Id__c : req.body.cart
-			}, "Shopify_Id__c").then(function(res){utils.log(res);}, function(err){utils.log(err);});
-		}
-		conn.query("SELECT Qualified__c FROM Contact WHERE Shopify_Customer_Id__c = '" + req.body.uid + "'").then(function(results){
-			utils.log(results);
-			if(results.records && results.records.length > 0 && results.records[0].Qualified__c === true)
-				success();
+
+		conn.query("SELECT Contact__r.Qualified__c, Contact__c FROM Firebase_Record__c WHERE UID__c = '" + req.body.uid + "'").then(function(results){
+			if(req.body.uid && req.body.cart){
+				conn.sobject("Cart__c").upsert({
+					Contact__c : results.records[0].Contact__c,
+					Shopify_Id__c : req.body.cart
+				}, "Shopify_Id__c").then(function(res){utils.log(res);}, function(err){utils.log(err);});
+			}
+
+			if(results.records && results.records.length > 0 && results.records[0].Contact__r.Qualified__c === true)
+				res.status(200).send();
+			else if(results.records && results.records.length > 0)
+				res.status(401).send();
 			else
-				fail();
+				res.status(403).send();
 		}, fail);
 	})
 
