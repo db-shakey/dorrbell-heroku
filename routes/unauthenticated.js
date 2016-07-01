@@ -264,13 +264,12 @@ module.exports = function(apiRoutes, conn, utils){
 		}
 
 		conn.query("SELECT Contact__r.Qualified__c, Contact__c FROM Firebase_Record__c WHERE UID__c = '" + req.body.uid + "'").then(function(results){
-			if(req.body.uid && req.body.cart){
+			if(req.body.uid && req.body.cart && results && results.records && results.records.length > 0){
 				conn.sobject("Cart__c").upsert({
 					Contact__c : results.records[0].Contact__c,
 					Shopify_Id__c : req.body.cart
 				}, "Shopify_Id__c").then(function(res){utils.log(res);}, function(err){utils.log(err);});
 			}
-
 			if(results.records && results.records.length > 0 && results.records[0].Contact__r.Qualified__c === true)
 				res.status(201).send();
 			else if(results.records && results.records.length > 0)
