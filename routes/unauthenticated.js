@@ -206,13 +206,13 @@ module.exports = function(apiRoutes, conn, utils){
 		var success = function(){
 			utils.log(qualified);
 			if(qualified)
-				res.status(200).send();
+				res.status(201).send();
 			else
-				res.status(403).send();
+				res.status(204).send();
 		}
 		var fail = function(err){
 			utils.log(err);
-			res.status(400).send(err);
+			res.status(403).send(err);
 		}
 
 		var contact = {
@@ -272,9 +272,9 @@ module.exports = function(apiRoutes, conn, utils){
 			}
 
 			if(results.records && results.records.length > 0 && results.records[0].Contact__r.Qualified__c === true)
-				res.status(200).send();
+				res.status(201).send();
 			else if(results.records && results.records.length > 0)
-				res.status(401).send();
+				res.status(204).send();
 			else
 				res.status(403).send();
 		}, fail);
