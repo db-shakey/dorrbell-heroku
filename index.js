@@ -48,10 +48,10 @@ conn.login(keys.sfUsername, keys.sfPassword, function(err, res){
 
 
 
-var utils = require('./utils/app-utils')(crypto, jwt);
+var user = require('./modules/user')(crypto, jwt);
 
 /**
-*  Demo route for interview
+*  Endpoints for posting errors and logging
 */
 apiRoutes.get('/log', function(req, res){
     res.sendFile(path.join(__dirname + '/pages/log.html'));
@@ -78,14 +78,14 @@ apiRoutes.post('/error', function(req, res){
 */
 //authenticate requests
 webhooks.use(function(req, res, next){
-    if(utils.verifyWebhook(req))
+    if(user.verifyWebhook(req))
       next();
     else
       res.status(401).send("Invalid Signature");
 });
 
 
-require('./routes/webhooks')(webhooks, conn, utils);
+require('./routes/webhooks')(webhooks, conn, user);
 
 
 /**
@@ -93,7 +93,7 @@ require('./routes/webhooks')(webhooks, conn, utils);
 */
 //authenticate requests
 sfRoutes.use(function(req, res, next){
-    if(utils.checkSfToken(req))
+    if(user.checkSfToken(req))
     next();
     else{
         return res.status(403).send({
@@ -102,7 +102,7 @@ sfRoutes.use(function(req, res, next){
         });
     }
 });
-var sf = require('./routes/salesforce')(sfRoutes, utils);
+var sf = require('./routes/salesforce')(sfRoutes, user);
 sf.startProductPoll(conn);
 
 
@@ -111,7 +111,7 @@ sf.startProductPoll(conn);
 */
 //authenticate requests
 apiRoutes.use(function(req, res, next){
-    if(utils.checkToken(req))
+    if(user.checkToken(req))
     next();
     else{
         return res.status(403).send({
@@ -120,7 +120,8 @@ apiRoutes.use(function(req, res, next){
         });
     }
 })
-require('./routes/unauthenticated')(apiRoutes, conn, utils);
+require('./routes/public')(apiRoutes, conn, user);
+require('./routes/retailer/public')(apiRoutes, conn, user);
 
 // route middleware to verify a token
 apiRoutes.use(function(req, res, next) {
@@ -129,7 +130,7 @@ apiRoutes.use(function(req, res, next) {
     // decode token
     if (token) {
         // verifies secret and checks exp
-        jwt.verify(token, utils.getPassword(), {ignoreExpiration : true}, function(err, decoded) {
+        jwt.verify(token, user.getPassword(), {ignoreExpiration : true}, function(err, decoded) {
             if (err) {
                 return res.json({ success: false, message: 'Failed to authenticate token.' });
             } else {
@@ -148,9 +149,9 @@ apiRoutes.use(function(req, res, next) {
     }
 });
 
-var socketUtils = require('./routes/utils')();
-var authPath = require('./routes/authenticated')(apiRoutes, conn, socketUtils, utils);
-
+var socketUtils = require('./modules/utils')();
+require('./routes/mobile/authenticated')(apiRoutes, conn, socketUtils, user);
+require('./routes/retailer/private')(apiRoutes, conn, user);
 
 
 
@@ -176,7 +177,7 @@ io.sockets.on("connection", function(socket){
     })
 });
 
-utils.setSocketServer(io);
+user.setSocketServer(io);
 
 server.listen(app.get('port'), function(){
     console.log("Dorrbell standard listening on port " + app.get('port'));

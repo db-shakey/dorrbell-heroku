@@ -4,7 +4,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 	var updated = {};
 
 	var crypto = require('crypto');
-	var shopify = require('../modules/shopify')(utils, conn);
+	var shopify = require('../../modules/shopify')(utils, conn);
 	var multer = require('multer');
 	var fs = require('fs');
 
