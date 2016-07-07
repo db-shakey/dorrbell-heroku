@@ -221,6 +221,7 @@ module.exports = function(apiRoutes, conn, utils){
 			'Email' : req.body.email,
 			'Status__c' : 'Active',
 			'Username__c' : req.body.email,
+			'Lead_Source__c' : req.body.leadSource,
 			'MailingStreet' : (req.body.address2) ? req.body.address + ' ' + req.body.address2 : req.body.address,
 			'MailingCity' : req.body.city,
 			'MailingState' : req.body.state,
