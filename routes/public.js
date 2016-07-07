@@ -279,9 +279,12 @@ module.exports = function(apiRoutes, conn, utils){
 	});
 
 	apiRoutes.get('/validate-zip/:zipCode', function(req, res){
-		conn.query("SELECT Value__c FROM Dorrbell_Setting__mdt WHERE DeveloperName = 'Enabled_Postal_Codes'").then(function(response){
+		conn.query("SELECT DeveloperName FROM Dorrbell_Location__mdt").then(function(response){
 			if(response && response.records && response.records.length > 0){
-				var zipCodes = response.records[0].Value__c.split(',');
+				var zipCodes = [];
+				for(var i = 0; i<response.records.length; i++){
+					zipCodes.push(response.records[i].DeveloperName);
+				}
 				if(zipCodes.indexOf(req.params.zipCode) != -1)
 				 	res.status(200).send();
 				else
