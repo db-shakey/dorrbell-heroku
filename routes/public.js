@@ -200,7 +200,6 @@ module.exports = function(apiRoutes, conn, utils){
 	})
 
 	apiRoutes.post('/register', function(req, res){
-		var sfUtils = require('./utils')();
 		var google = require('../modules/google')(utils);
 		var qualified = false;
 		var success = function(){
@@ -277,6 +276,21 @@ module.exports = function(apiRoutes, conn, utils){
 			else
 				res.status(403).send();
 		}, fail);
+	});
+
+	apiRoutes.get('/validate-zip/:zipCode', function(req, res){
+		conn.query("SELECT Value__c FROM Dorrbell_Setting__mdt WHERE DeveloperName = 'Enabled_Postal_Codes'").then(function(response){
+			if(response && response.records && response.records.length > 0){
+				var zipCodes = response.records[0].Value__c.split(',');
+				if(zipCodes.indexOf(req.params.zipCode) != -1)
+				 	res.status(200).send();
+				else
+					res.status(204).send();
+			}
+		}, function(err){
+			utils.log(err);
+			res.status(400).send();
+		})
 	})
 
 };
