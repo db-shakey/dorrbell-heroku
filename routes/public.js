@@ -235,22 +235,25 @@ module.exports = function(apiRoutes, conn, utils){
 				contact.RecordTypeId = recordTypeResults.records[0].Id;
 				return conn.sobject("Contact").upsert(contact, 'Username__c').then(function(){
 					return conn.query("SELECT Id, Qualified__c FROM Contact WHERE Username__c = '" + req.body.email + "'").then(function(data){
-						var social = {
-							ExternalId : req.body.networkId,
-							External_Id__c : req.body.networkId,
-							ExternalPictureUrl : req.body.photoUrl,
-							ParentId : data.records[0].Id,
-							Name : req.body.firstName + ' ' + req.body.lastName,
-							IsDefault : true,
-							Provider : req.body.provider
-						};
 						qualified = data.records[0].Qualified__c;
-						return conn.sobject("SocialPersona").upsert(social, "External_Id__c").then(function(){
-							return conn.sobject("Firebase_Record__c").upsert(
-								{
-									Contact__c : data.records[0].Id,
-									UID__c : req.body.uid
-								}, 'UID__c');
+						return conn.sobject("Firebase_Record__c").upsert(
+							{
+								Contact__c : data.records[0].Id,
+								UID__c : req.body.uid
+							}, 'UID__c'
+						).then(function(){
+							if(req.body.networkId && req.body.provider){
+								var social = {
+									ExternalId : req.body.networkId,
+									External_Id__c : req.body.networkId,
+									ExternalPictureUrl : req.body.photoUrl,
+									ParentId : data.records[0].Id,
+									Name : req.body.firstName + ' ' + req.body.lastName,
+									IsDefault : true,
+									Provider : req.body.provider
+								};
+								return conn.sobject("SocialPersona").upsert(social, "External_Id__c");
+							}
 						}, fail);
 					}, fail);
 				}, fail);
