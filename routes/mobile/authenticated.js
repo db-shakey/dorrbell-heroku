@@ -499,7 +499,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 	apiRoutes.post('/shopify/createProduct', function(request, response){
 
-		var productModule = require('../modules/product')(utils, conn);
+		var productModule = require('../../modules/product')(utils, conn);
 		shopify.createProduct(request.body).then(function(res){
 			response.status(200).send(res);
 		}, function(err){
