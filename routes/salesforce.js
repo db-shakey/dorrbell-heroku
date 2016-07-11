@@ -126,7 +126,7 @@ module.exports = function(routes, utils){
                   deletingImages.push(result.resources[i].public_id);
               }
               if(result.next_cursor)
-                getAllImages(result.next_cursor);
+                findUnusedImages(result.next_cursor);
               else{
                 deleteUnusedImages(deletingImages, 0, 100);
               }
