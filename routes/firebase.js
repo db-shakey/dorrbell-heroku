@@ -58,9 +58,8 @@ module.exports = function(routes, utils, conn){
   })
 
   routes.delete('/sobject', function(req, res){
-    var ref = db.ref('/' + req.body.firebaseId);
-    var objList = {};
-    ref.remove();
+    var ref = db.ref();
+    ref.child(req.body.firebaseId).remove();
     res.status(200).send();
   })
 
