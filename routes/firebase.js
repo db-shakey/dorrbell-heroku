@@ -49,7 +49,10 @@ module.exports = function(routes, utils, conn){
 
     var obj = {};
     obj[req.body.firebaseId] = req.body;
-    ref.update(obj);
+    if(!db.ref(req.body.firebaseId))
+      ref.child(req.body.firebaseId).set(obj);
+    else
+      ref.child(req.body.firebaseId).update(obj);
 
     // var objList = {};
     //
