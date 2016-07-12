@@ -48,7 +48,7 @@ module.exports = function(routes, utils){
     startProductPoll : function(conn){
       var CronJob = require('cron').CronJob;
       var that = this;
-      new CronJob('0 * * * *', function() {
+      new CronJob('30 2 * * *', function() {
         that.syncProducts(conn);
       }, null, true, 'America/Los_Angeles');
     },
