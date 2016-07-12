@@ -18,6 +18,7 @@
     "ejs": "^2.3.1",
     "express": "~4.9.x",
     "express-session": "^1.11.3",
+    "firebase": "^3.1.0",
     "jsforce": "*",
     "jsonwebtoken": "^5.0.5",
     "knex": "^0.8.6",

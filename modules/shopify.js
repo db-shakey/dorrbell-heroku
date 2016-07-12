@@ -22,7 +22,7 @@ module.exports = function(utils, conn){
     var keys = require('./keys')();
     return new Promise(function(resolve, reject){
       req({
-        uri : keys.shopifyUrl() + '/admin/' + path,
+        uri : process.env.shopifyUrl() + '/admin/' + path,
         method : method,
         body : postData,
         json : true

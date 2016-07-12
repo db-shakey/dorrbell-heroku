@@ -13,7 +13,6 @@ var https         = require('https');
 var path          = require('path');
 //Main app
 var app = express();
-var keys = require('./modules/keys')();
 
 app.set('port', (process.env.PORT || 5050));
 app.use(express.static('public'));
@@ -23,7 +22,7 @@ app.use(cors());
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(bodyParser.json({
     verify : function(req, res, buf, encoding){
-        req.headers['x-generated-signature'] = crypto.createHmac('sha256', keys.shopify_key)
+        req.headers['x-generated-signature'] = crypto.createHmac('sha256', process.env.shopify_key)
         .update(buf)
         .digest('base64');
     },
@@ -37,12 +36,11 @@ var sfRoutes = express.Router();
 
 var conn = new jsforce.Connection({
     maxRequest : 50,
-    loginUrl : keys.sfLoginUrl
+    loginUrl : process.env.sfLoginUrl
 });
 var socketServer;
 
-
-conn.login(keys.sfUsername, keys.sfPassword, function(err, res){
+conn.login(process.env.sfUsername, process.env.sfPassword, function(err, res){
     if(err){return console.error(err);}
 });
 
@@ -103,6 +101,7 @@ sfRoutes.use(function(req, res, next){
     }
 });
 var sf = require('./routes/salesforce')(sfRoutes, user);
+var fb = require('./routes/firebase')(sfRoutes, user, conn);
 sf.startProductPoll(conn);
 
 

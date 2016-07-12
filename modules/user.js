@@ -1,8 +1,6 @@
 module.exports = function(crypto, jwt){
 
 	var algorithm = 'aes-256-ctr';
-	var keys = require('../modules/keys')();
-
 	var io;
 
 	return {
@@ -23,30 +21,30 @@ module.exports = function(crypto, jwt){
 			return false;
 		},
 		checkToken : function(req){
-			return req.headers['authorization'] == keys.token;
+			return req.headers['authorization'] == process.env.token;
 		},
 		checkSfToken : function(req){
-			return req.headers['authorization'] == keys.sfToken;
+			return req.headers['authorization'] == process.env.sfToken;
 		},
 		encryptText : function(text){
-			var cipher = crypto.createCipher(algorithm,keys.password)
+			var cipher = crypto.createCipher(algorithm,process.env.password)
 		    var crypted = cipher.update(text,'utf8','hex')
      		crypted += cipher.final('hex');
 	  		return crypted;
 		},
 		decryptText : function(text){
-			var decipher = crypto.createDecipher(algorithm,keys.password)
+			var decipher = crypto.createDecipher(algorithm,process.env.password)
 			var dec = decipher.update(text,'hex','utf8')
 			dec += decipher.final('utf8');
 			return dec;
 		},
 		signUser : function(user){
-			return jwt.sign(user, keys.password, {
+			return jwt.sign(user, process.env.password, {
       			expiresIn : "365d" //24 hours
     		});
 		},
 		getPassword : function(){
-			return keys.password;
+			return process.env.password;
 		},
 		setSocketServer : function(socketServer){
 			io = socketServer;
