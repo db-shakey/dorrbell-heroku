@@ -44,6 +44,7 @@ module.exports = function(routes, utils, conn){
   })
 
   routes.post('/sobject', function(req, res){
+    utils.log('made it to the route');
     var ref = db.ref();
     var objList = {};
 
