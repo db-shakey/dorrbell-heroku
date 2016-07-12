@@ -40,7 +40,7 @@ module.exports = function(routes, utils, conn){
         }
       }
       conn.sobject(type).update(data).then(function(res){}, onError);
-    })
+    }) 
   })
 
   routes.post('/sobject', function(req, res){
