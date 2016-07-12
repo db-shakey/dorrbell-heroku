@@ -54,45 +54,14 @@ module.exports = function(routes, utils, conn){
     else
       ref.update(obj);
 
-    // var objList = {};
-    //
-    //
-    // for(var i = 0; i<req.body.length; i++){
-    //   var type = req.body[i].attributes.type;
-    //   if(!objList[type])
-    //   objList[type] = {};
-    //
-    //   objList[type][req.body[i].Id] = req.body[i];
-    // }
-    // for(var i in objList){
-    //   var typeRef = db.ref(i);
-    //   if(!typeRef)
-    //   ref.child(i).set(objList[i]);
-    //   else
-    //   ref.child(i).update(objList[i]);
-    // }
     res.status(200).send();
   })
 
   routes.delete('/sobject', function(req, res){
-    var ref = db.ref();
+    var ref = db.ref('/' + req.body.firebaseId);
     var objList = {};
-    var firebaseId = req.body.firebaseId;
-    ref.child(firebaseId).remove();
-    //
-    // for(var i = 0; i<req.body.length; i++){
-    //   var type = req.body[i].attributes.type;
-    //   if(!objList[type])
-    //   objList[type] = {};
-    //
-    //   objList[type][req.body[i].Id] = req.body[i];
-    // }
-    // for(var i in objList){
-    //   var obj = ref.child(i);
-    //   for(var x in objList[i]){
-    //     db.ref(i).child(objList[i][x].Id).remove();
-    //   }
-    // }
+    var firebaseId = ;
+    ref.remove();
     res.status(200).send();
   })
 
