@@ -8,8 +8,8 @@ module.exports = function(routes, utils, conn){
    *************/
   var firebase = require('firebase');
   firebase.initializeApp({
-    serviceAccount: './certs/dorrbell-firebase.json',
-    databaseURL: "https://dorrbell-1106.firebaseio.com/",
+    serviceAccount: process.env.firebaseCredentials,
+    databaseURL: process.env.firebaseUrl,
     databaseAuthVariableOverride: {
       uid: "my-service-worker"
     }
