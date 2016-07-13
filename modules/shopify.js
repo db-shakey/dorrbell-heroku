@@ -19,7 +19,6 @@ module.exports = function(utils, conn){
 
   var doCallout = function(method, path, postData){
     var req = require('request');
-    var keys = require('./keys')();
     return new Promise(function(resolve, reject){
       req({
         uri : process.env.shopifyUrl() + '/admin/' + path,
