@@ -21,7 +21,7 @@ module.exports = function(utils, conn){
     var req = require('request');
     return new Promise(function(resolve, reject){
       req({
-        uri : process.env.shopifyUrl() + '/admin/' + path,
+        uri : process.env.shopifyUrl + '/admin/' + path,
         method : method,
         body : postData,
         json : true
