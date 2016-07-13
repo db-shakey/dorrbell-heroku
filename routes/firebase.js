@@ -19,6 +19,8 @@ module.exports = function(routes, utils, conn){
   db.ref('customers').orderByKey().on('child_added', function(customer){
     db.ref('customers').child(customer.key).child('carts').on("child_added", function(cart){
       var cart = cart.val();
+      if(cart.Id)
+        delete cart.Id
       conn.sobject("Cart__c").upsert(cart, "Shopify_Id__c").then(function(res){utils.log(res);}, function(err){utils.log(err);});
     })
   });
