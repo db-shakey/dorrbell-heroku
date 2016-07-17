@@ -71,7 +71,7 @@ module.exports = function(routes, utils){
             }else{
               finalize();
             }
-          }, 500);
+          }, 1000);
         }
 
         var finalize = function(){
