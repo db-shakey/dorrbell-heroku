@@ -26,8 +26,6 @@ module.exports = function(utils, conn){
         body : postData,
         json : true
       }, function(err, res, body){
-        utils.log(body);
-        utils.log(err);
         if(!err && (body && !body.errors))
           resolve(body);
         else if(body && body.errors){
@@ -211,6 +209,12 @@ module.exports = function(utils, conn){
       });
     },
 
+    updateMetafield : function(metafield){
+      return doCallout('PUT', 'metafields/' + metafield.id + '.json', {
+        "metafield" : metafield
+      });
+    },
+
     updateVariantBatch : function(variantArray, parentProductId){
       var that = this;
       var productModule = require('../modules/product')(utils, conn);
@@ -338,7 +342,7 @@ module.exports = function(utils, conn){
       });
     },
 
-    getAllProducts : function(){
+    getAllProducts : function(vendor){
       var productModule = require('../modules/product')(utils, conn);
       return new Promise(function(resolve, reject){
 
@@ -349,7 +353,8 @@ module.exports = function(utils, conn){
           var productCount;
           setTimeout(function(){
             promiseArray.push(new Promise(function(r, j){
-              doCallout('GET', 'products.json?limit=250&page=' + page).then(function(body){
+              var strVendor = (vendor) ? '&vendor=' + encodeURIComponent(vendor) : '';
+              doCallout('GET', 'products.json?limit=250&page=' + page + strVendor).then(function(body){
                 if(body.products){
                   productCount = body.products.length;
                   for(var i = 0; i<body.products.length; i++){

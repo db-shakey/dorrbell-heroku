@@ -53,10 +53,11 @@ module.exports = function(routes, utils){
       }, null, true, 'America/Los_Angeles');
     },
     syncProducts : function(conn){
+      utils.log('starting sync process at ' + new Date());
       var cloudinary = require('cloudinary');
 
       shopify.getAllProducts().then(function(products){
-
+        utils.log('syncing ' + products.length + ' products');
         var promiseArray = new Array();
         var variantArray = new Array();
         var existingImages = new Array();
@@ -87,7 +88,9 @@ module.exports = function(routes, utils){
               "products" : products,
               "metadata" : metadata
             };
+            utils.log(body);
             conn.apex.put('/Product/', body);
+            utils.log('finished sync process at ' + new Date());
           }, function(err){
             onError(err, res);
           });

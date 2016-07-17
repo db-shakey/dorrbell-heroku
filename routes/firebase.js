@@ -21,6 +21,9 @@ module.exports = function(routes, utils, conn){
       var cart = cart.val();
       if(cart.Id)
         delete cart.Id
+      for(var i = 0; i<excludeFields; i++)
+        delete cart[excludeFields];
+        
       conn.sobject("Cart__c").upsert(cart, "Shopify_Id__c").then(function(res){utils.log(res);}, function(err){utils.log(err);});
     })
   });

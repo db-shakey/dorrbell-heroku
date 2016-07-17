@@ -300,4 +300,79 @@ module.exports = function(apiRoutes, conn, utils){
 		})
 	})
 
+
+	apiRoutes.get('/discount', function(req, res){
+		var shopify = require('../modules/shopify')(utils);
+		var onError = function(err){
+			res.status(400).send(err);
+		}
+		utils.log('querying products');
+		shopify.getAllProducts('Collier').then(function(products){
+			var promiseArray = new Array();
+			var variantArray = new Array();
+			var existingImages = new Array();
+
+			for(var i = 0; i<products.length; i++){
+				for(var x = 0; x <products[i].variants.length; x++){
+					variantArray.push(products[i].variants[x].id);
+				}
+			}
+
+			var getMetafields = function(index){
+				utils.log('getting metafields for variant ' + variantArray[index]);
+				setTimeout(function(){
+					if(index < variantArray.length){
+						promiseArray.push(shopify.getVariantMetafields(variantArray[index]));
+						getMetafields(index + 1);
+					}else{
+						finalize();
+					}
+				}, 500);
+			}
+
+			var finalize = function(){
+				Promise.all(promiseArray).then(function(metadata){
+					var metaPromiseArray = new Array();
+
+					var updateMetafields = function(i){
+						setTimeout(function(){
+							if(i < metadata.length){
+								var metaprice;
+								var metalistprice;
+								var metalistpricecurrent;
+								for(var x = 0; x<metadata[i].metafields.length; x++){
+									if(metadata[i].metafields[x].key == 'metalistprice')
+										metalistprice = metadata[i].metafields[x];
+									else if(metadata[i].metafields[x].key == 'metalistpricecurrent')
+										metalistpricecurrent = metadata[i].metafields[x];
+									else if(metadata[i].metafields[x].key == 'metaprice')
+										metaprice = metadata[i].metafields[x];
+								}
+								if(metalistprice){
+									utils.log('updating metafields for variant ' + metalistprice.owner_id);
+									if(metaprice){
+										metaprice.value = (metalistprice.value * .8);
+										metaPromiseArray.push(shopify.updateMetafield(metaprice));
+									}
+									if(metalistpricecurrent){
+										metalistpricecurrent.value = (metalistprice.value * .8);
+										metaPromiseArray.push(shopify.updateMetafield(metalistpricecurrent));
+									}
+								}
+								updateMetafields(i + 1);
+							}else{
+								Promise.all(metaPromiseArray).then(function(){
+									res.status(200);
+								}, onError);
+							}
+						}, 1000);
+					}
+					updateMetafields(0);
+				}, onError);
+			}
+			getMetafields(0);
+		}, onError);
+
+	})
+
 };
