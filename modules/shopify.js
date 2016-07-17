@@ -368,7 +368,7 @@ module.exports = function(utils, conn){
         var finalize = function(){
           resolve(productArray);
         }
-        getProducts(0);
+        getProducts(1);
       });
 
     },
