@@ -62,16 +62,8 @@ module.exports = function(routes, utils){
         var variantArray = new Array();
         var existingImages = new Array();
 
-        for(var i = 0; i<products.length; i++){
-          for(var x = 0; x <products[i].variants.length; x++){
-            variantArray.push(products[i].variants[x].id);
-          }
-          for(var x = 0; x < products[i].images.length; x++){
-            existingImages.push(products[i].images[x].id);
-          }
-        }
-
         var getMetafields = function(index){
+          utils.log('getting metafields ' + index);
           setTimeout(function(){
             if(index < variantArray.length){
               promiseArray.push(shopify.getVariantMetafields(variantArray[index]));
@@ -83,6 +75,7 @@ module.exports = function(routes, utils){
         }
 
         var finalize = function(){
+          utils.log('finalizing');
           Promise.all(promiseArray).then(function(metadata){
             var body = {
               "products" : products,
@@ -100,6 +93,7 @@ module.exports = function(routes, utils){
         var total;
 
         var deleteUnusedImages = function(imageArray, start, offset){
+          utils.log('deleting unused images');
           var subSet = imageArray.slice(start, offset);
           cloudinary.api.delete_resources(subSet, function(result){
             if(offset < imageArray.length){
@@ -112,6 +106,7 @@ module.exports = function(routes, utils){
         }
 
         var findUnusedImages = function(next_cursor){
+          utils.log('finding unused images');
           var params = {max_results : 500};
           if(next_cursor)
             params.next_cursor = next_cursor;
@@ -138,6 +133,17 @@ module.exports = function(routes, utils){
             params
           )
         }
+
+        for(var i = 0; i<products.length; i++){
+          for(var x = 0; x <products[i].variants.length; x++){
+            variantArray.push(products[i].variants[x].id);
+          }
+          for(var x = 0; x < products[i].images.length; x++){
+            existingImages.push(products[i].images[x].id);
+          }
+        }
+        utils.log('generated variant array ' + variantArray.length + ' and image array ' + existingImages.length);
+
         findUnusedImages();
 
         getMetafields(0);
