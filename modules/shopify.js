@@ -346,35 +346,27 @@ module.exports = function(utils, conn){
       var productModule = require('../modules/product')(utils, conn);
       return new Promise(function(resolve, reject){
 
-        var promiseArray = new Array();
         var productArray = new Array();
 
         var getProducts = function(page){
-          var productCount;
-          setTimeout(function(){
-            promiseArray.push(new Promise(function(r, j){
-              var strVendor = (vendor) ? '&vendor=' + encodeURIComponent(vendor) : '';
-              doCallout('GET', 'products.json?limit=250&page=' + page + strVendor).then(function(body){
-                if(body.products){
-                  productCount = body.products.length;
-                  for(var i = 0; i<body.products.length; i++){
-                    productModule.generateThumbnails(body.products[i]);
-                  }
-                  productArray = productArray.concat(body.products);
-                }
-                r();
-              }, j);
-            }));
+          var strVendor = (vendor) ? '&vendor=' + vendor : '';
+          doCallout('GET', 'products.json?limit=250&page=' + page + strVendor).then(function(body){
+            var productCount;
+            if(body.products){
+              productCount = body.products.length;
+              for(var i = 0; i<body.products.length; i++){
+                productModule.generateThumbnails(body.products[i]);
+              }
+              productArray = productArray.concat(body.products);
+            }
             if(productCount && productCount > 0)
-              getProducts(page + 1);
+              setTimeout(function(){getProducts(page + 1);}, 500);
             else
               finalize();
-          }, 500);
+          }, reject);
         }
         var finalize = function(){
-          Promise.all(promiseArray).then(function(){
-            resolve(productArray);
-          }, reject);
+          resolve(productArray);
         }
         getProducts(0);
       });

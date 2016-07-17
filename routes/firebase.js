@@ -1,7 +1,7 @@
 module.exports = function(routes, utils, conn){
   var path = require('path');
   var excludeFields = ['LastModifiedDate', 'OrderNumber', 'CreatedById', 'IsDeleted', 'IsReductionOrder', 'Return_Shopping_Assistant_Phone__c',
-                      'CreatedDate', 'Delivery_Shopping_Assistant_Phone__c', 'TotalAmount', 'SystemModstamp', 'LastModifiedById', 'attributes'];
+                      'CreatedDate', 'Delivery_Shopping_Assistant_Phone__c', 'TotalAmount', 'SystemModstamp', 'LastModifiedById', 'attributes', 'LastViewedDate', 'LastReferencedDate', 'Name'];
 
   /**************
    * Firebase Server
@@ -21,9 +21,10 @@ module.exports = function(routes, utils, conn){
       var cart = cart.val();
       if(cart.Id)
         delete cart.Id
-      for(var i = 0; i<excludeFields; i++)
-        delete cart[excludeFields];
-        
+      for(var i = 0; i<excludeFields.length; i++){
+        delete cart[excludeFields[i]];
+      }
+
       conn.sobject("Cart__c").upsert(cart, "Shopify_Id__c").then(function(res){utils.log(res);}, function(err){utils.log(err);});
     })
   });
