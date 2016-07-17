@@ -2,7 +2,7 @@ module.exports = function(apiRoutes, conn, utils){
 
 	apiRoutes.post('/forceSync', function(req, res){
 		var sf = require('./salesforce')(null, utils);
-		sf.syncProducts(conn);
+		sf.syncProducts(conn, req.query.vendor);
 		res.status(200).send();
 	})
 

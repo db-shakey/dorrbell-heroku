@@ -52,11 +52,11 @@ module.exports = function(routes, utils){
         that.syncProducts(conn);
       }, null, true, 'America/Los_Angeles');
     },
-    syncProducts : function(conn){
-      utils.log('starting sync process at ' + new Date());
+    syncProducts : function(conn, vendor){
+      utils.log('starting sync process at ' + new Date() + ' for vendor ' + vendor);
       var cloudinary = require('cloudinary');
 
-      shopify.getAllProducts().then(function(products){
+      shopify.getAllProducts(vendor).then(function(products){
         utils.log('syncing ' + products.length + ' products');
         var promiseArray = new Array();
         var variantArray = new Array();
