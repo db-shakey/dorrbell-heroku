@@ -113,6 +113,14 @@ module.exports = function(apiRoutes, conn, utils){
 		});
 	});
 
+	apiRoutes.get('/code/:code', function(req, res){
+		conn.query("SELECT Id, FirstName, LastName, (SELECT ProfileUrl, ExternalPictureURL FROM Personas) FROM Contact WHERE Referral_Code__c = '" + req.params.code + "'").then(function(response){
+			res.status(200).send(response);
+		}, function(err){
+			res.status(400).send(err);
+		});
+	})
+
 	apiRoutes.post('/registershopify/:contactId', function(req, res){
 		var shopify = require('../modules/shopify')(utils);
 		var contact = req.body;
@@ -233,6 +241,8 @@ module.exports = function(apiRoutes, conn, utils){
 		conn.query("SELECT Id FROM RecordType WHERE DeveloperName = 'Dorrbell_Customer_Contact' AND sObjectType = 'Contact'").then(function(recordTypeResults){
 			if(recordTypeResults.records && recordTypeResults.records.length > 0){
 				contact.RecordTypeId = recordTypeResults.records[0].Id;
+
+
 				return conn.sobject("Contact").upsert(contact, 'Username__c').then(function(){
 					return conn.query("SELECT Id, Qualified__c FROM Contact WHERE Username__c = '" + req.body.email + "'").then(function(data){
 						qualified = data.records[0].Qualified__c;
@@ -242,6 +252,17 @@ module.exports = function(apiRoutes, conn, utils){
 								UID__c : req.body.uid
 							}, 'UID__c'
 						).then(function(){
+							var extraArray = new Array();
+							if(req.body.referralFrom){
+								extraArray.push(conn.sobject("Customer_Referral__c").create({
+									From__c : req.body.referralFrom,
+									To__c : data.records[0].Id,
+									Product__r : {Shopify_Id__c : 'referral-discount'},
+									External_Id__c : req.body.referralFrom + ':' + data.records[0].Id,
+									Source__c : 'Registration'
+								}));
+							}
+
 							if(req.body.networkId && req.body.provider){
 								var social = {
 									ExternalId : req.body.networkId,
@@ -252,8 +273,13 @@ module.exports = function(apiRoutes, conn, utils){
 									IsDefault : true,
 									Provider : req.body.provider
 								};
-								return conn.sobject("SocialPersona").upsert(social, "External_Id__c");
+								extraArray.push(
+									conn.sobject("SocialPersona").upsert(social, "External_Id__c")
+								);
 							}
+							return new Promise(function(resolveExtra, rejectExtra){
+									Promise.all(extraArray).then(resolveExtra, resolveExtra);
+							});
 						}, fail);
 					}, fail);
 				}, fail);
