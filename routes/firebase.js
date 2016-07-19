@@ -17,7 +17,7 @@ module.exports = function(routes, utils, conn){
   var db = firebase.database();
 
   db.ref('customers').orderByKey().on('child_added', function(customer){
-    db.ref('customers').child(customer.key).child('carts').on("child_changed", function(cart){
+    db.ref('customers/' + customer.key + '/contact/Carts__r/records').on('child_changed', function(cart){
       var cart = cart.val();
       if(cart.Id)
         delete cart.Id
@@ -32,7 +32,7 @@ module.exports = function(routes, utils, conn){
           utils.log(err);
         }
       });
-    })
+    });
   });
 
   var ref = db.ref('customers')
