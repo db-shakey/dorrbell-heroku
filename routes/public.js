@@ -235,7 +235,8 @@ module.exports = function(apiRoutes, conn, utils){
 			'MailingState' : req.body.state,
 			'MailingPostalCode' : req.body.postalCode,
 			'Birthdate' : req.body.birthday,
-			'MobilePhone' : req.body.phone
+			'MobilePhone' : req.body.phone,
+			'Referred_By__c' : req.body.referralFrom
 		};
 
 		conn.query("SELECT Id FROM RecordType WHERE DeveloperName = 'Dorrbell_Customer_Contact' AND sObjectType = 'Contact'").then(function(recordTypeResults){
@@ -243,7 +244,7 @@ module.exports = function(apiRoutes, conn, utils){
 				contact.RecordTypeId = recordTypeResults.records[0].Id;
 
 
-				return conn.sobject("Contact").upsert(contact, 'Username__c').then(function(){
+				return conn.sobject("Contact").insert(contact, 'Username__c').then(function(){
 					return conn.query("SELECT Id, Qualified__c FROM Contact WHERE Username__c = '" + req.body.email + "'").then(function(data){
 						qualified = data.records[0].Qualified__c;
 						return conn.sobject("Firebase_Record__c").upsert(
@@ -252,33 +253,19 @@ module.exports = function(apiRoutes, conn, utils){
 								UID__c : req.body.uid
 							}, 'UID__c'
 						).then(function(){
-							var extraArray = new Array();
-							if(req.body.referralFrom){
-								extraArray.push(conn.sobject("Customer_Referral__c").create({
-									From__c : req.body.referralFrom,
-									To__c : data.records[0].Id,
-									Product__r : {Shopify_Id__c : 'referral-discount'},
-									External_Id__c : req.body.referralFrom + ':' + data.records[0].Id,
-									Source__c : 'Registration'
-								}));
-							}
-
-							if(req.body.networkId && req.body.provider){
-								var social = {
-									ExternalId : req.body.networkId,
-									External_Id__c : req.body.networkId,
-									ExternalPictureUrl : req.body.photoUrl,
-									ParentId : data.records[0].Id,
-									Name : req.body.firstName + ' ' + req.body.lastName,
-									IsDefault : true,
-									Provider : req.body.provider
-								};
-								extraArray.push(
-									conn.sobject("SocialPersona").upsert(social, "External_Id__c")
-								);
-							}
-							return new Promise(function(resolveExtra, rejectExtra){
-									Promise.all(extraArray).then(resolveExtra, resolveExtra);
+							return new Promise(function(resolvePersona, rejectPersona){
+								if(req.body.networkId && req.body.provider){
+									conn.sobject("SocialPersona").upsert({
+										ExternalId : req.body.networkId,
+										External_Id__c : req.body.networkId,
+										ExternalPictureUrl : req.body.photoUrl,
+										ParentId : data.records[0].Id,
+										Name : req.body.firstName + ' ' + req.body.lastName,
+										IsDefault : true,
+										Provider : req.body.provider
+									}, "External_Id__c").then(resolvePersona, resolvePersona);
+								}else
+									resolvePersona();
 							});
 						}, fail);
 					}, fail);

@@ -17,7 +17,7 @@ module.exports = function(routes, utils, conn){
   var db = firebase.database();
 
   db.ref('customers').orderByKey().on('child_added', function(customer){
-    db.ref('customers').child(customer.key).child('carts').on("child_added", function(cart){
+    db.ref('customers').child(customer.key).child('carts').on("child_changed", function(cart){
       var cart = cart.val();
       if(cart.Id)
         delete cart.Id
@@ -25,7 +25,13 @@ module.exports = function(routes, utils, conn){
         delete cart[excludeFields[i]];
       }
 
-      conn.sobject("Cart__c").upsert(cart, "Shopify_Id__c").then(function(res){utils.log(res);}, function(err){utils.log(err);});
+      conn.sobject("Cart__c").upsert(cart, "Shopify_Id__c").then(function(res){utils.log(res);}, function(err){
+        if(err.errorCode == 'ENTITY_IS_DELETED'){
+          db.ref('customers/' + customer.key + '/' + cart.key).remove();
+        }else{
+          utils.log(err);
+        }
+      });
     })
   });
 
