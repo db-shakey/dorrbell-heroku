@@ -16,23 +16,28 @@ module.exports = function(routes, utils, conn){
   });
   var db = firebase.database();
 
-  db.ref('customers').orderByKey().on('child_added', function(customer){
-    db.ref('customers/' + customer.key + '/contact/Carts__r/records').on('child_changed', function(cart){
-      var cart = cart.val();
-      if(cart.Id)
-        delete cart.Id
-      for(var i = 0; i<excludeFields.length; i++){
-        delete cart[excludeFields[i]];
-      }
 
-      conn.sobject("Cart__c").upsert(cart, "Shopify_Id__c").then(function(res){utils.log(res);}, function(err){
-        if(err.errorCode == 'ENTITY_IS_DELETED'){
-          db.ref('customers/' + customer.key + '/' + cart.key).remove();
-        }else{
-          utils.log(err);
+  db.ref('customers').on('value', function(data){
+
+    data.forEach(function(customer){
+      var cartRecordRef = db.ref('customers/' + customer.key + '/contact/Carts__r/records');
+      cartRecordRef.on('child_changed', function(inst_cart){
+        var cart = inst_cart.val();
+        if(cart.Id)
+        delete cart.Id
+        for(var i = 0; i<excludeFields.length; i++){
+          delete cart[excludeFields[i]];
         }
-      });
-    });
+
+        conn.sobject("Cart__c").upsert(cart, "Shopify_Id__c").then(function(res){utils.log(res);}, function(err){
+          if(err.errorCode == 'ENTITY_IS_DELETED'){
+            db.ref('customers/' + customer.key + '/' + cart.key).remove();
+          }else{
+            utils.log(err);
+          }
+        });
+      })
+    })
   });
 
   var ref = db.ref('customers')
