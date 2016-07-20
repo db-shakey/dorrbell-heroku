@@ -16,15 +16,12 @@ module.exports = function(routes, utils, conn){
   });
   var db = firebase.database();
 
-
-  db.ref('customers').on('value', function(data){
-
-    data.forEach(function(customer){
-      var cartRecordRef = db.ref('customers/' + customer.key + '/contact/Carts__r/records');
-      cartRecordRef.on('child_changed', function(inst_cart){
-        var cart = inst_cart.val();
+  db.ref('customers').on('child_changed', function(data){
+    db.ref('customers/' + data.key + '/contact/Carts__r/records').on('value', function(inst_cart){
+      var cart = inst_cart.val();
+      if(cart){
         if(cart.Id)
-        delete cart.Id
+          delete cart.Id
         for(var i = 0; i<excludeFields.length; i++){
           delete cart[excludeFields[i]];
         }
@@ -36,11 +33,9 @@ module.exports = function(routes, utils, conn){
             utils.log(err);
           }
         });
-      })
-    })
+      }
+    });
   });
-
-  var ref = db.ref('customers')
 
   routes.post('/fb/customers', function(req, res){
     var ref = db.ref('customers');
