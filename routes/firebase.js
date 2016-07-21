@@ -29,25 +29,33 @@ module.exports = function(routes, utils, conn){
         }
 
         if(data && data.key && lockRecords.indexOf(data.key) < 0){
-          utils.log(cart);
           conn.sobject("Cart__c").upsert(cart, "Shopify_Id__c").then(function(res){utils.log(res);}, function(err){utils.log(err);});
         }
       }
     });
   });
 
-  db.ref('customers').on("child_changed", function(data){
-    if(lockRecords.indexOf(data.key) > -1){
-      utils.log('unlocking record ' + data.key);
-      lockRecords.splice(lockRecords.indexOf(data.key), 1);
-    }
+  db.ref('customers').on("value", function(c){
+    c.forEach(function(data){
+      unlockRecord(data.key);
+    });
   })
 
+  var lockRecord = function(key){
+    utils.log('locking record' + key);
+    lockRecords.push(key);
+    setTimeout(function(){unlockRecord(key);}, 5000);
+  }
 
+  var unlockRecord = function(key){
+    if(lockRecords.indexOf(key) > -1){
+      utils.log('unlocking record' + key);
+      lockRecords.splice(lockRecords.indexOf(key), 1);
+    }
+  }
 
   routes.post('/fb/customers', function(req, res){
-    utils.log('locking record ' + req.body.firebaseId);
-    lockRecords.push(req.body.firebaseId);
+    lockRecord(req.body.firebaseId);
 
     var ref = db.ref('customers');
 
@@ -62,8 +70,7 @@ module.exports = function(routes, utils, conn){
   });
 
   routes.delete('/fb/customers', function(req, res){
-    utils.log('locking record ' + req.body.firebaseId);
-    lockRecords.push(req.body.firebaseId);
+    lockRecord(req.body.firebaseId);
 
     var ref = db.ref('customers');
     ref.child(req.body.firebaseId).remove();
