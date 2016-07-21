@@ -161,19 +161,32 @@ module.exports = function(apiRoutes, conn, utils){
 								UID__c : req.body.uid
 							}, 'UID__c'
 						).then(function(){
-							return new Promise(function(resolvePersona, rejectPersona){
-								if(req.body.networkId && req.body.provider){
-									conn.sobject("SocialPersona").upsert({
-										ExternalId : req.body.networkId,
-										External_Id__c : req.body.networkId,
-										ExternalPictureUrl : req.body.photoUrl,
-										ParentId : data.records[0].Id,
-										Name : req.body.firstName + ' ' + req.body.lastName,
-										IsDefault : true,
-										Provider : req.body.provider
-									}, "External_Id__c").then(resolvePersona, resolvePersona);
-								}else
-									resolvePersona();
+							var extraArray = new Array();
+							if(req.body.referralFrom){
+								extraArray.push(conn.sobject("Customer_Referral__c").create({
+									From__c : req.body.referralFrom,
+									To__c : data.records[0].Id,
+									Product__r : {Shopify_Id__c : 'referral-discount'},
+									Source__c : 'Registration'
+								}));
+							}
+
+							if(req.body.networkId && req.body.provider){
+								var social = {
+									ExternalId : req.body.networkId,
+									External_Id__c : req.body.networkId,
+									ExternalPictureUrl : req.body.photoUrl,
+									ParentId : data.records[0].Id,
+									Name : req.body.firstName + ' ' + req.body.lastName,
+									IsDefault : true,
+									Provider : req.body.provider
+								};
+								extraArray.push(
+									conn.sobject("SocialPersona").upsert(social, "External_Id__c")
+								);
+							}
+							return new Promise(function(resolveExtra, rejectExtra){
+								Promise.all(extraArray).then(resolveExtra, resolveExtra);
 							});
 						}, fail);
 					}, fail);
