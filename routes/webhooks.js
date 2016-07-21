@@ -6,7 +6,6 @@ module.exports = function(route, conn, utils){
 	 *************************/
   route.post('/product/:route', function(req, res){
     var product = req.body;
-    utils.log(product);
     var route = req.params.route;
     var productModule = require('../modules/product')(utils, conn);
 
@@ -93,7 +92,6 @@ module.exports = function(route, conn, utils){
 	 * Cart
 	 *************************/
   route.post('/cart/:route', function(req, res){
-    utils.log(req.body);
     var body = {
       cart : req.body
     };

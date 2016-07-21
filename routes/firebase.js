@@ -3,6 +3,7 @@ module.exports = function(routes, utils, conn){
   var excludeFields = ['LastModifiedDate', 'OrderNumber', 'CreatedById', 'IsDeleted', 'IsReductionOrder', 'Return_Shopping_Assistant_Phone__c',
                       'CreatedDate', 'Delivery_Shopping_Assistant_Phone__c', 'TotalAmount', 'SystemModstamp', 'LastModifiedById', 'attributes', 'LastViewedDate', 'LastReferencedDate', 'Name', 'Cart_Items__c'];
 
+  var lockRecords = [];
   /**************
    * Firebase Server
    *************/
@@ -16,9 +17,10 @@ module.exports = function(routes, utils, conn){
   });
   var db = firebase.database();
 
-  db.ref('customers').on('child_changed', function(data){
-    db.ref('customers/' + data.key + '/contact/Carts__r/records').on('value', function(inst_cart){
+  db.ref('customers').once('child_changed', function(data){
+    db.ref('customers/' + data.key + '/contact/Carts__r/records').on('child_added', function(inst_cart){
       var cart = inst_cart.val();
+
       if(cart){
         if(cart.Id)
           delete cart.Id
@@ -26,18 +28,27 @@ module.exports = function(routes, utils, conn){
           delete cart[excludeFields[i]];
         }
 
-        conn.sobject("Cart__c").upsert(cart, "Shopify_Id__c").then(function(res){utils.log(res);}, function(err){
-          if(err.errorCode == 'ENTITY_IS_DELETED'){
-            db.ref('customers/' + customer.key + '/' + cart.key).remove();
-          }else{
-            utils.log(err);
-          }
-        });
+        if(data && data.key && lockRecords.indexOf(data.key) < 0){
+          utils.log(cart);
+          conn.sobject("Cart__c").upsert(cart, "Shopify_Id__c").then(function(res){utils.log(res);}, function(err){utils.log(err);});
+        }
       }
     });
   });
 
+  db.ref('customers').on("child_changed", function(data){
+    if(lockRecords.indexOf(data.key) > -1){
+      utils.log('unlocking record ' + data.key);
+      lockRecords.splice(lockRecords.indexOf(data.key), 1);
+    }
+  })
+
+
+
   routes.post('/fb/customers', function(req, res){
+    utils.log('locking record ' + req.body.firebaseId);
+    lockRecords.push(req.body.firebaseId);
+
     var ref = db.ref('customers');
 
     var obj = {};
@@ -51,6 +62,9 @@ module.exports = function(routes, utils, conn){
   });
 
   routes.delete('/fb/customers', function(req, res){
+    utils.log('locking record ' + req.body.firebaseId);
+    lockRecords.push(req.body.firebaseId);
+
     var ref = db.ref('customers');
     ref.child(req.body.firebaseId).remove();
     res.status(200).send();

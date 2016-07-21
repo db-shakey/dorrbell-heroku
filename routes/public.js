@@ -1,50 +1,7 @@
 module.exports = function(apiRoutes, conn, utils){
-
-	apiRoutes.post('/forceSync', function(req, res){
-		var sf = require('./salesforce')(null, utils);
-		sf.syncProducts(conn, req.query.vendor);
-		res.status(200).send();
-	})
-
-	apiRoutes.post('/lead', function(req, res){
-		var lead = req.body;
-		utils.log(lead);
-		conn.query("SELECT Id FROM RecordType WHERE SObjectType = 'Contact' AND DeveloperName = 'Dorrbell_Customer_Contact'", function(err, data){
-			if(err || !data.records){
-				res.status(400).json({
-					success : false,
-	        message : 'Insert failed. Record Type Not Found'
-				});
-			}else{
-				var recType = data.records[0];
-				if(!lead.email || !lead.zip){
-					res.status(400).json({
-	          success : false,
-	          message : 'Email and Zip Code are required'
-	        });
-				}else{
-					utils.log('creating contact');
-					conn.sobject("Contact").create({
-						LastName : 'NA',
-						LeadSource : 'Web',
-						Email : lead.email,
-						MailingPostalCode : lead.zip,
-						RecordTypeId : recType.Id,
-						Status__c : 'disabled'
-					}, function(err, ret){
-						if(err || !ret.success)
-							res.status(400).json({
-								success : false,
-								message : err
-							});
-						else
-							res.status(200).send("Ok");
-					})
-				}
-			}
-		})
-	});
-
+	/**************
+	 * GET API METHODS
+	 *************/
 	apiRoutes.get('/contact/:contactId', function(req, res){
 		conn.query("SELECT Id, Email FROM Contact WHERE Id = '" + req.params.contactId + "'", function(err, data){
 			if(err || !data.records){
@@ -58,6 +15,42 @@ module.exports = function(apiRoutes, conn, utils){
 		})
 	});
 
+	apiRoutes.get('/beta/:betaKey', function(req, res){
+		conn.query("SELECT Id, FirstName, LastName, Email, MobilePhone, Status__c FROM Contact WHERE Beta_Key__c = '" + req.params.betaKey + "'", function(err, data){
+			var contact = data.records[0];
+			if(err || !contact){
+				res.status(400).json({
+					success : false, message : 'The beta key you entered is incorrect.'
+				});
+			}else if(contact.Status__c == 'Active'){
+				res.status(400).json({
+					success : false, message : 'This beta key is already in use.'
+				});
+			}else if(contact){
+				res.send(contact);
+			}
+		});
+	});
+
+	apiRoutes.get('/code/:code', function(req, res){
+		conn.query("SELECT Id, FirstName, LastName, (SELECT ProfileUrl, ExternalPictureURL FROM Personas) FROM Contact WHERE Referral_Code__c = '" + req.params.code + "'").then(function(response){
+			res.status(200).send(response);
+		}, function(err){
+			res.status(400).send(err);
+		});
+	})
+
+	apiRoutes.post('/forceSync', function(req, res){
+		var sf = require('./salesforce')(null, utils);
+		sf.syncProducts(conn, req.query.vendor);
+		res.status(200).send();
+	})
+
+
+
+	/**************
+	 * POST API METHODS
+	 *************/
 	apiRoutes.post('/authenticate', function(req, res){
 	  conn.query("SELECT Id, \
 	  					Password__c, \
@@ -96,68 +89,6 @@ module.exports = function(apiRoutes, conn, utils){
 	  });
 	});
 
-	apiRoutes.get('/beta/:betaKey', function(req, res){
-		conn.query("SELECT Id, FirstName, LastName, Email, MobilePhone, Status__c FROM Contact WHERE Beta_Key__c = '" + req.params.betaKey + "'", function(err, data){
-			var contact = data.records[0];
-			if(err || !contact){
-				res.status(400).json({
-					success : false, message : 'The beta key you entered is incorrect.'
-				});
-			}else if(contact.Status__c == 'Active'){
-				res.status(400).json({
-					success : false, message : 'This beta key is already in use.'
-				});
-			}else if(contact){
-				res.send(contact);
-			}
-		});
-	});
-
-	apiRoutes.get('/code/:code', function(req, res){
-		conn.query("SELECT Id, FirstName, LastName, (SELECT ProfileUrl, ExternalPictureURL FROM Personas) FROM Contact WHERE Referral_Code__c = '" + req.params.code + "'").then(function(response){
-			res.status(200).send(response);
-		}, function(err){
-			res.status(400).send(err);
-		});
-	})
-
-	apiRoutes.post('/registershopify/:contactId', function(req, res){
-		var shopify = require('../modules/shopify')(utils);
-		var contact = req.body;
-
-		if(!utils.validateContact(contact))
-			res.status(400).json({
-				success : false,
-				message : 'Error Registering'
-			});
-		else{
-			shopify.createCustomer(contact).then(function(data){
-				var shopData = JSON.parse(data);
-				contact.Password__c = utils.encryptText(contact.Password__c);
-				contact.Status__c = 'Active';
-				contact.Shopify_Customer_ID__c = shopData.customer.id;
-				conn.sobject('Contact').update(
-					contact
-					,function(err, rets){
-						if(err){
-							res.status(400).send(err);
-						}else{
-							res.json({
-								success : true,
-								message : 'Ok'
-							});
-						}
-					}
-				);
-			}, function(err){
-				res.status(400).json({
-					success : false,
-					message : err
-				})
-			});
-		}
-	})
-
 	apiRoutes.post('/register/:contactId', function(req, res){
 		var contact = req.body;
 		if(!utils.validateContact(contact))
@@ -183,29 +114,6 @@ module.exports = function(apiRoutes, conn, utils){
 			});
 		}
 	});
-
-	apiRoutes.post('/twitter-info', function(req, res){
-		var Twitter = require('twitter');
-		var fail = function(err){
-			res.status(400).send(err);
-		}
-		if(req.body.accessToken && req.body.secret && req.body.uid){
-			var client = new Twitter({
-				consumer_key : "07nSJGnNhAQ9wbYrA10hTof9A",
-				consumer_secret : "alIG7T1qyHRtGlnvFO8mrhWPaTHCCfIRFSkovHn3oSnlY67u5v",
-				access_token_key : req.body.accessToken,
-				access_token_secret : req.body.secret
-			});
-			client.get('users/show', {user_id : req.body.uid}, function(error, response){
-				if(error){
-					fail(error);
-				}else
-					res.status(200).send(response);
-			})
-		}else{
-			fail();
-		}
-	})
 
 	apiRoutes.post('/register', function(req, res){
 		var google = require('../modules/google')(utils);
@@ -295,96 +203,28 @@ module.exports = function(apiRoutes, conn, utils){
 		}, fail);
 	});
 
-	apiRoutes.get('/validate-zip/:zipCode', function(req, res){
-		conn.query("SELECT Postal_Code__c FROM Dorrbell_Location__c").then(function(response){
-			if(response && response.records && response.records.length > 0){
-				var zipCodes = [];
-				for(var i = 0; i<response.records.length; i++){
-					zipCodes.push(response.records[i].Postal_Code__c);
-				}
-				if(zipCodes.indexOf(req.params.zipCode) != -1)
-				 	res.status(200).send();
-				else
-					res.status(204).send();
-			}
-		}, function(err){
-			utils.log(err);
-			res.status(400).send();
-		})
-	})
-
-
-	apiRoutes.get('/discount', function(req, res){
-		var shopify = require('../modules/shopify')(utils);
-		var onError = function(err){
-			res.status(400).send(err);
+	apiRoutes.post('/redeem', function(req, res){
+		var onError = function(msg){
+			res.status(400).send(msg);
 		}
-		utils.log('querying products');
-		shopify.getAllProducts('Collier').then(function(products){
-			var promiseArray = new Array();
-			var variantArray = new Array();
-			var existingImages = new Array();
-
-			for(var i = 0; i<products.length; i++){
-				for(var x = 0; x <products[i].variants.length; x++){
-					variantArray.push(products[i].variants[x].id);
+		if(req.body.Id && req.body.code){
+			conn.query("SELECT Id FROM Contact WHERE Referral_Code__c = '" + req.body.code + "'").then(function(results){
+				if(results && results.records[0]){
+					conn.sobject("Customer_Referral__c").insert({
+						From__c : results.records[0].Id,
+						To__c : req.body.Id,
+						Product__r : {Shopify_Id__c : 'referral-discount'},
+						Source__c : 'Direct'
+					}).then(function(){
+						res.status(200).send('Ok');
+					}, onError);
+				}else{
+					onError("Invalid Referral Code");
 				}
-			}
-
-			var getMetafields = function(index){
-				utils.log('getting metafields for variant ' + variantArray[index]);
-				setTimeout(function(){
-					if(index < variantArray.length){
-						promiseArray.push(shopify.getVariantMetafields(variantArray[index]));
-						getMetafields(index + 1);
-					}else{
-						finalize();
-					}
-				}, 500);
-			}
-
-			var finalize = function(){
-				Promise.all(promiseArray).then(function(metadata){
-					var metaPromiseArray = new Array();
-
-					var updateMetafields = function(i){
-						setTimeout(function(){
-							if(i < metadata.length){
-								var metaprice;
-								var metalistprice;
-								var metalistpricecurrent;
-								for(var x = 0; x<metadata[i].metafields.length; x++){
-									if(metadata[i].metafields[x].key == 'metalistprice')
-										metalistprice = metadata[i].metafields[x];
-									else if(metadata[i].metafields[x].key == 'metalistpricecurrent')
-										metalistpricecurrent = metadata[i].metafields[x];
-									else if(metadata[i].metafields[x].key == 'metaprice')
-										metaprice = metadata[i].metafields[x];
-								}
-								if(metalistprice){
-									utils.log('updating metafields for variant ' + metalistprice.owner_id);
-									if(metaprice){
-										metaprice.value = (metalistprice.value * .8);
-										metaPromiseArray.push(shopify.updateMetafield(metaprice));
-									}
-									if(metalistpricecurrent){
-										metalistpricecurrent.value = (metalistprice.value * .8);
-										metaPromiseArray.push(shopify.updateMetafield(metalistpricecurrent));
-									}
-								}
-								updateMetafields(i + 1);
-							}else{
-								Promise.all(metaPromiseArray).then(function(){
-									res.status(200);
-								}, onError);
-							}
-						}, 1000);
-					}
-					updateMetafields(0);
-				}, onError);
-			}
-			getMetafields(0);
-		}, onError);
+			}, onError)
+		}else{
+			onError("Invalid Referral Code");
+		}
 
 	})
 
