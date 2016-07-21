@@ -11,13 +11,15 @@ var crypto        = require('crypto');
 var http          = require('http');
 var https         = require('https');
 var path          = require('path');
+var raven         = require('raven');
 //Main app
 var app = express();
+
 
 app.set('port', (process.env.PORT || 5050));
 app.use(express.static('public'));
 
-
+app.use(raven.middleware.express.requestHandler('https://d9174acab3fe487eb8a8e1045ee5b66c:dcf700841bea4f58a9d85d5c2519a3b3@app.getsentry.com/87887'));
 app.use(cors());
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(bodyParser.json({
@@ -160,6 +162,10 @@ require('./routes/retailer/private')(apiRoutes, conn, user);
 app.use('/api', apiRoutes);
 app.use('/webhook', webhooks);
 app.use('/sf', sfRoutes);
+
+// The error handler must be before any other error middleware
+app.use(raven.middleware.express.errorHandler('https://d9174acab3fe487eb8a8e1045ee5b66c:dcf700841bea4f58a9d85d5c2519a3b3@app.getsentry.com/87887'));
+
 
 var server = http.createServer(app);
 var io = require('socket.io')(server,{

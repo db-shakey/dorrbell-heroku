@@ -200,7 +200,7 @@ module.exports = function(apiRoutes, conn, utils){
 			res.status(403).send();
 		}
 
-		conn.query("SELECT Contact__r.Qualified__c, Contact__c FROM Firebase_Record__c WHERE UID__c = '" + req.body.uid + "'").then(function(results){
+		conn.query("SELECT Contact__r.Qualified__c, Contact__c FROM Firebase_Record__c WHERE UID__c = '" + req.body.uid + "' AND UID__c != null").then(function(results){
 			if(req.body.uid && req.body.cart && results && results.records && results.records.length > 0){
 				conn.sobject("Cart__c").upsert({
 					Contact__c : results.records[0].Contact__c,
