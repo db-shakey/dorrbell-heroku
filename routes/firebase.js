@@ -69,6 +69,11 @@ module.exports = function(routes, utils, conn){
     res.status(200).send();
   });
 
+  routes.post('/fb/retailers', function(req, res){
+    var ref = db.ref('retailers');
+    ref.set(req.body);
+  });
+
   routes.delete('/fb/customers', function(req, res){
     lockRecord(req.body.firebaseId);
 
