@@ -33,12 +33,23 @@ module.exports = function(apiRoutes, conn, utils){
 	});
 
 	apiRoutes.get('/code/:code', function(req, res){
-		conn.query("SELECT Id, FirstName, LastName, (SELECT ProfileUrl, ExternalPictureURL FROM Personas) FROM Contact WHERE Referral_Code__c = '" + req.params.code + "'").then(function(response){
-			res.status(200).send(response);
-		}, function(err){
+		var error = function(msg){
 			res.status(400).send(err);
-		});
-	})
+		}
+		conn.query("SELECT Product__c FROM Promotion WHERE Referral_Promotion__c = TRUE ORDER BY CreatedDate DESC LIMIT 1").then(function(promoData){
+			var product = promoData.data.records[0].Product__c;
+			if(product){
+				Promise.all([
+					conn.query("SELECT UnitPrice FROM PricebookEntry WHERE Product2Id = '" + product + "'"),
+					conn.query("SELECT Id, FirstName, LastName, (SELECT ProfileUrl, ExternalPictureURL FROM Personas) FROM Contact WHERE Referral_Code__c = '" + req.params.code + "'")
+				]).then(function(data){
+					res.status(200).send(data);
+				}, error)
+			}else{
+				error("No referral products");
+			}
+		}, error);
+	});
 
 	apiRoutes.post('/forceSync', function(req, res){
 		var sf = require('./salesforce')(null, utils);
