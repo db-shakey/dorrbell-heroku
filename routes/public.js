@@ -34,10 +34,10 @@ module.exports = function(apiRoutes, conn, utils){
 
 	apiRoutes.get('/code/:code', function(req, res){
 		var error = function(msg){
-			res.status(400).send(err);
+			res.status(400).send(msg);
 		}
-		conn.query("SELECT Product__c FROM Promotion WHERE Referral_Promotion__c = TRUE ORDER BY CreatedDate DESC LIMIT 1").then(function(promoData){
-			var product = promoData.data.records[0].Product__c;
+		conn.query("SELECT Product__c FROM Promotion__c WHERE Referral_Promotion__c = TRUE ORDER BY CreatedDate DESC LIMIT 1").then(function(promoData){
+			var product = promoData.records[0].Product__c;
 			if(product){
 				Promise.all([
 					conn.query("SELECT UnitPrice FROM PricebookEntry WHERE Product2Id = '" + product + "'"),
