@@ -220,17 +220,17 @@ module.exports = function(apiRoutes, conn, utils){
 		var onError = function(msg){
 			res.status(400).send(msg);
 		}
-
 		conn.apex.post('/Promotion/', {
 			code : req.body.code,
 			toId : req.body.Id,
 			source : 'Direct',
 			immediate : false
-		}).then(function(){
-			res.status(200).send('Ok');
-		}, onError);
+		}).then(
+			function(){
+				res.status(200).send('Ok');
+			},
+			onError
+		);
 	});
-
-	})
 
 };
