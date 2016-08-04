@@ -226,8 +226,8 @@ module.exports = function(apiRoutes, conn, utils){
 			source : 'Direct',
 			immediate : false
 		}).then(
-			function(res){
-				res.status(200).send(res);
+			function(data){
+				res.status(200).send(data);
 			},
 			onError
 		);
