@@ -220,24 +220,16 @@ module.exports = function(apiRoutes, conn, utils){
 		var onError = function(msg){
 			res.status(400).send(msg);
 		}
-		if(req.body.Id && req.body.code){
-			conn.query("SELECT Id FROM Contact WHERE Referral_Code__c = '" + req.body.code + "'").then(function(results){
-				if(results && results.records[0]){
-					conn.sobject("Customer_Referral__c").insert({
-						From__c : results.records[0].Id,
-						To__c : req.body.Id,
-						Product__r : {Shopify_Id__c : 'referral-discount'},
-						Source__c : 'Direct'
-					}).then(function(){
-						res.status(200).send('Ok');
-					}, onError);
-				}else{
-					onError("Invalid Referral Code");
-				}
-			}, onError)
-		}else{
-			onError("Invalid Referral Code");
-		}
+
+		conn.apex.post('/Promotion/', {
+			code : req.body.code,
+			toId : req.body.Id,
+			source : 'Direct',
+			immediate : false
+		}).then(function(){
+			res.status(200).send('Ok');
+		}, onError);
+	}
 
 	})
 
