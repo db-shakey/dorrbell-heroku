@@ -229,7 +229,7 @@ module.exports = function(apiRoutes, conn, utils){
 		}).then(function(){
 			res.status(200).send('Ok');
 		}, onError);
-	}
+	});
 
 	})
 
