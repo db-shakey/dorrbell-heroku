@@ -33,12 +33,23 @@ module.exports = function(apiRoutes, conn, utils){
 	});
 
 	apiRoutes.get('/code/:code', function(req, res){
-		conn.query("SELECT Id, FirstName, LastName, (SELECT ProfileUrl, ExternalPictureURL FROM Personas) FROM Contact WHERE Referral_Code__c = '" + req.params.code + "'").then(function(response){
-			res.status(200).send(response);
-		}, function(err){
-			res.status(400).send(err);
-		});
-	})
+		var error = function(msg){
+			res.status(400).send(msg);
+		}
+		conn.query("SELECT Product__c FROM Promotion__c WHERE Referral_Promotion__c = TRUE ORDER BY CreatedDate DESC LIMIT 1").then(function(promoData){
+			var product = promoData.records[0].Product__c;
+			if(product){
+				Promise.all([
+					conn.query("SELECT UnitPrice FROM PricebookEntry WHERE Product2Id = '" + product + "'"),
+					conn.query("SELECT Id, FirstName, LastName, (SELECT ProfileUrl, ExternalPictureURL FROM Personas) FROM Contact WHERE Referral_Code__c = '" + req.params.code + "'")
+				]).then(function(data){
+					res.status(200).send(data);
+				}, error)
+			}else{
+				error("No referral products");
+			}
+		}, error);
+	});
 
 	apiRoutes.post('/forceSync', function(req, res){
 		var sf = require('./salesforce')(null, utils);
@@ -220,25 +231,17 @@ module.exports = function(apiRoutes, conn, utils){
 		var onError = function(msg){
 			res.status(400).send(msg);
 		}
-		if(req.body.Id && req.body.code){
-			conn.query("SELECT Id FROM Contact WHERE Referral_Code__c = '" + req.body.code + "'").then(function(results){
-				if(results && results.records[0]){
-					conn.sobject("Customer_Referral__c").insert({
-						From__c : results.records[0].Id,
-						To__c : req.body.Id,
-						Product__r : {Shopify_Id__c : 'referral-discount'},
-						Source__c : 'Direct'
-					}).then(function(){
-						res.status(200).send('Ok');
-					}, onError);
-				}else{
-					onError("Invalid Referral Code");
-				}
-			}, onError)
-		}else{
-			onError("Invalid Referral Code");
-		}
-
-	})
+		conn.apex.post('/Promotion/', {
+			code : req.body.code,
+			toId : req.body.Id,
+			source : 'Direct',
+			immediate : false
+		}).then(
+			function(data){
+				res.status(200).send(data);
+			},
+			onError
+		);
+	});
 
 };

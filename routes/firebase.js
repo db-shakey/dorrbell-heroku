@@ -3,6 +3,15 @@ module.exports = function(routes, utils, conn){
   var excludeFields = ['LastModifiedDate', 'OrderNumber', 'CreatedById', 'IsDeleted', 'IsReductionOrder', 'Return_Shopping_Assistant_Phone__c',
                       'CreatedDate', 'Delivery_Shopping_Assistant_Phone__c', 'TotalAmount', 'SystemModstamp', 'LastModifiedById', 'attributes', 'LastViewedDate', 'LastReferencedDate', 'Name', 'Cart_Items__c'];
 
+  var watchers = {
+    'Carts__r' : {
+      externalId : 'Shopify_Id__c',
+      sObject : 'Cart__c'
+    },
+    'Events' : {
+      sObject : 'Event'
+    }
+  }
   var lockRecords = [];
   /**************
    * Firebase Server
@@ -17,22 +26,29 @@ module.exports = function(routes, utils, conn){
   });
   var db = firebase.database();
 
+
+
   db.ref('customers').once('child_changed', function(data){
-    db.ref('customers/' + data.key + '/contact/Carts__r/records').on('child_added', function(inst_cart){
-      var cart = inst_cart.val();
-
-      if(cart){
-        if(cart.Id)
-          delete cart.Id
-        for(var i = 0; i<excludeFields.length; i++){
-          delete cart[excludeFields[i]];
+    for(var i in watchers){
+      db.ref('customers/' + data.key + '/contact/' + i + '/records').on('child_added', function(inst){
+        var obj = inst.val();
+        var key = inst.ref.parent.parent.key;
+        if(obj){
+          if(obj.Id)
+            delete obj.Id;
+          for(var x = 0; x<excludeFields.length; x++){
+            delete obj[excludeFields[x]];
+          }
+          if(data && data.key && lockRecords.indexOf(data.key) < 0){
+            if(watchers[key].externalId){
+              conn.sobject(watchers[key].sObject).upsert(obj, watchers[key].externalId).then(function(res){utils.log(res);}, function(err){utils.log(err);});
+            }else{
+              conn.sobject(watchers[key].sObject).create(obj).then(function(res){utils.log(res);}, function(err){utils.log(err);});
+            }
+          }
         }
-
-        if(data && data.key && lockRecords.indexOf(data.key) < 0){
-          conn.sobject("Cart__c").upsert(cart, "Shopify_Id__c").then(function(res){utils.log(res);}, function(err){utils.log(err);});
-        }
-      }
-    });
+      })
+    }
   });
 
   db.ref('customers').on("value", function(c){
@@ -67,6 +83,11 @@ module.exports = function(routes, utils, conn){
       ref.update(obj);
 
     res.status(200).send();
+  });
+
+  routes.post('/fb/retailers', function(req, res){
+    var ref = db.ref('retailers');
+    ref.set(req.body);
   });
 
   routes.delete('/fb/customers', function(req, res){
