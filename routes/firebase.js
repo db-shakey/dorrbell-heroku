@@ -27,29 +27,28 @@ module.exports = function(routes, utils, conn){
   var db = firebase.database();
 
 
-
-  db.ref('customers').once('child_changed', function(data){
-    for(var i in watchers){
-      db.ref('customers/' + data.key + '/contact/' + i + '/records').on('child_added', function(inst){
-        var obj = inst.val();
-        var key = inst.ref.parent.parent.key;
-        if(obj){
-          if(obj.Id)
-            delete obj.Id;
-          for(var x = 0; x<excludeFields.length; x++){
-            delete obj[excludeFields[x]];
-          }
-          if(data && data.key && lockRecords.indexOf(data.key) < 0){
-            if(watchers[key].externalId){
-              conn.sobject(watchers[key].sObject).upsert(obj, watchers[key].externalId).then(function(res){utils.log(res);}, function(err){utils.log(err);});
-            }else{
-              conn.sobject(watchers[key].sObject).create(obj).then(function(res){utils.log(res);}, function(err){utils.log(err);});
-            }
-          }
-        }
-      })
-    }
-  });
+  // db.ref('customers').once('child_changed', function(data){
+  //   for(var i in watchers){
+  //     db.ref('customers/' + data.key + '/contact/' + i + '/records').on('child_added', function(inst){
+  //       var obj = inst.val();
+  //       var key = inst.ref.parent.parent.key;
+  //       if(obj){
+  //         if(obj.Id)
+  //           delete obj.Id;
+  //         for(var x = 0; x<excludeFields.length; x++){
+  //           delete obj[excludeFields[x]];
+  //         }
+  //         if(data && data.key && lockRecords.indexOf(data.key) < 0){
+  //           if(watchers[key].externalId){
+  //             conn.sobject(watchers[key].sObject).upsert(obj, watchers[key].externalId).then(function(res){utils.log(res);}, function(err){utils.log(err);});
+  //           }else{
+  //             conn.sobject(watchers[key].sObject).create(obj).then(function(res){utils.log(res);}, function(err){utils.log(err);});
+  //           }
+  //         }
+  //       }
+  //     })
+  //   }
+  // });
 
   db.ref('customers').on("value", function(c){
     c.forEach(function(data){

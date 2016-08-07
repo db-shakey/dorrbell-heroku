@@ -15,6 +15,9 @@ var raven         = require('raven');
 //Main app
 var app = express();
 
+if(!process.env.PORT){
+  require('node-env-file')(__dirname + '/.env');
+}
 
 app.set('port', (process.env.PORT || 5050));
 app.use(express.static('public'));

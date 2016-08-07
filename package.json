@@ -23,6 +23,7 @@
     "jsonwebtoken": "^5.0.5",
     "knex": "^0.8.6",
     "multer": "^1.1.0",
+    "node-env-file": "^0.1.8",
     "pg": "^4.4.1",
     "raven": "^0.11.0",
     "request": "^2.69.0",
