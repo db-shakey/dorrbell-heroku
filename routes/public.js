@@ -246,19 +246,19 @@ module.exports = function(apiRoutes, conn, utils){
 
 	apiRoutes.post('/cart', function(req, res){
 		conn.sobject('Cart__c').upsert(req.body, 'Shopify_Id__c').then(function(){
-			req.status(200).send();
+			res.status(200).send();
 		},
 		function(err){
-			req.status(400).send(err);
+			res.status(400).send(err);
 		});
 	});
 
 	apiRoutes.post('/event', function(req, res){
 		conn.sobject('Event').create(req.body).then(function(){
-			req.status(200).send();
+			res.status(200).send();
 		},
 		function(err){
-			req.status(400).send(err);
+			res.status(400).send(err);
 		});
 	})
 
