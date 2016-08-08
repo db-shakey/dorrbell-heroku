@@ -85,8 +85,13 @@ module.exports = function(routes, utils, conn){
   });
 
   routes.post('/fb/retailers', function(req, res){
+    utils.log(req.body);
     var ref = db.ref('retailers');
-    ref.set(req.body);
+    var obj = {};
+    for(var i = 0; i<req.body.length; i++){
+      obj[req.body[i].Id] = req.body[i];
+    }
+    ref.set(obj);
   });
 
   routes.delete('/fb/customers', function(req, res){

@@ -163,7 +163,7 @@ module.exports = function(apiRoutes, conn, utils){
 				contact.RecordTypeId = recordTypeResults.records[0].Id;
 
 
-				return conn.sobject("Contact").insert(contact, 'Username__c').then(function(){
+				return conn.sobject("Contact").upsert(contact, 'Username__c').then(function(){
 					return conn.query("SELECT Id, Qualified__c FROM Contact WHERE Username__c = '" + req.body.email + "'").then(function(data){
 						qualified = data.records[0].Qualified__c;
 						return conn.sobject("Firebase_Record__c").upsert(
