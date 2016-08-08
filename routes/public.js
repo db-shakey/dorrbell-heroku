@@ -174,12 +174,16 @@ module.exports = function(apiRoutes, conn, utils){
 						).then(function(){
 							var extraArray = new Array();
 							if(req.body.referralFrom){
-								extraArray.push(conn.sobject("Customer_Referral__c").create({
-									From__c : req.body.referralFrom,
-									To__c : data.records[0].Id,
-									Product__r : {Shopify_Id__c : 'referral-discount'},
-									Source__c : 'Registration'
-								}));
+								conn.query("SELECT Id FROM Promotion__c WHERE Referral_Promotion__c = TRUE ORDER BY CreatedDate DESC").then(function(promos){
+									if(promos && promos.records.length > 0){
+										extraArray.push(conn.sobject("Customer_Promotion__c").create({
+											From__c : req.body.referralFrom,
+											To__c : data.records[0].Id,
+											Promotion__c : promos.records[0].Id,
+											Source__c : 'Registration'
+										}));
+									}
+								});
 							}
 
 							if(req.body.networkId && req.body.provider){
