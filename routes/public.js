@@ -155,7 +155,8 @@ module.exports = function(apiRoutes, conn, utils){
 			'MailingPostalCode' : req.body.postalCode,
 			'Birthdate' : req.body.birthday,
 			'MobilePhone' : req.body.phone,
-			'Referred_By__c' : req.body.referralFrom
+			'Referred_By__c' : req.body.referralFrom,
+			'Registered_Date_Time__c' : new Date()
 		};
 
 		conn.query("SELECT Id FROM RecordType WHERE DeveloperName = 'Dorrbell_Customer_Contact' AND sObjectType = 'Contact'").then(function(recordTypeResults){
