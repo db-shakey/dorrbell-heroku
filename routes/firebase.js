@@ -89,7 +89,7 @@ module.exports = function(routes, utils, conn){
     var ref = db.ref('retailers');
     var obj = {};
     for(var i = 0; i<req.body.length; i++){
-      obj[req.body[i].Id] = req.body[i];
+      obj[req.body[i].recordId] = req.body[i];
     }
     ref.set(obj);
   });
