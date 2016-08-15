@@ -92,6 +92,8 @@ module.exports = function(routes, utils, conn){
       obj[req.body[i].recordId] = req.body[i];
     }
     ref.set(obj);
+
+    res.status(200).send();
   });
 
   routes.delete('/fb/customers', function(req, res){
@@ -112,6 +114,8 @@ module.exports = function(routes, utils, conn){
       db.ref('locations').set(obj);
     else
       db.ref('locations').update(obj);
+
+    res.status(200).send();
   });
 
   routes.delete('/fb/locations', function(req, res){
