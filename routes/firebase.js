@@ -19,10 +19,7 @@ module.exports = function(routes, utils, conn){
   var firebase = require('firebase');
   firebase.initializeApp({
     serviceAccount: process.env.firebaseCredentials,
-    databaseURL: process.env.firebaseUrl,
-    databaseAuthVariableOverride: {
-      uid: "my-service-worker"
-    }
+    databaseURL: process.env.firebaseUrl
   });
   var db = firebase.database();
 
