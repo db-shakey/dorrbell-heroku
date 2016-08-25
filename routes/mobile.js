@@ -1,10 +1,12 @@
 module.exports = function(apiRoutes, conn, socketUtils, utils){
 
+	apiRoutes.use(utils.verifyJwt);
+
 	var globalDescribe;
 	var updated = {};
 
 	var crypto = require('crypto');
-	var shopify = require('../../modules/shopify')(utils, conn);
+	var shopify = require('../modules/shopify')(utils, conn);
 	var multer = require('multer');
 	var fs = require('fs');
 
@@ -499,7 +501,7 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 	apiRoutes.post('/shopify/createProduct', function(request, response){
 
-		var productModule = require('../../modules/product')(utils, conn);
+		var productModule = require('../modules/product')(utils, conn);
 		shopify.createProduct(request.body).then(function(res){
 			response.status(200).send(res);
 		}, function(err){

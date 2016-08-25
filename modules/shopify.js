@@ -19,23 +19,36 @@ module.exports = function(utils, conn){
 
   var doCallout = function(method, path, postData){
     var req = require('request');
-    return new Promise(function(resolve, reject){
-      req({
-        uri : process.env.shopifyUrl + '/admin/' + path,
-        method : method,
-        body : postData,
-        json : true
-      }, function(err, res, body){
-        if(!err && (body && !body.errors))
-          resolve(body);
-        else if(body && body.errors){
-          reject([body.errors, method, path, postData]);
-        }
-        else if(err)
-          reject([err, method, path, postData]);
+    var promiseRetry = require('promise-retry');
+
+    return promiseRetry(function(retry, number){
+      if(number > 1)
+        console.log('retry ' + number + ' for ' + path);
+      return new Promise(function(resolve, reject){
+        req({
+          uri : process.env.shopifyUrl + '/admin/' + path,
+          method : method,
+          body : postData,
+          json : true
+        }, function(err, res, body){
+          if(!err && (body && !body.errors))
+            resolve(body);
+          else if(body && body.errors){
+            reject([body.errors, method, path, postData]);
+          }
+          else if(err)
+            reject([err, method, path, postData]);
+          else
+            resolve();
+        });
+      }).catch(function(err){
+        if(err[0].indexOf('Exceeded 2 calls') >= 0)
+          retry(err);
         else
-          resolve();
+          throw err;
       });
+    }, {
+      retries : 20
     });
   }
 
@@ -86,7 +99,7 @@ module.exports = function(utils, conn){
         return new Promise(function(resolve, reject){
           var getOptionValue = function(name, product){
             var value;
-            if(product.Product_Options__r.records && product.Product_Options__r.records.length){
+            if(product.Product_Options__r && product.Product_Options__r.records && product.Product_Options__r.records.length){
               for(var i = 0; i<product.Product_Options__r.records.length; i++){
                 var o = product.Product_Options__r.records[i];
                 if(o.Option__r && o.Option__r.Name == name)
@@ -95,7 +108,25 @@ module.exports = function(utils, conn){
             }
             return value;
           }
-
+          var priceMap = {
+            "metaprice" : "Display_Price__c",
+            "metalistpricecurrent" : "UnitPrice",
+            "metalistprice" : "UnitPrice"
+          }
+          var promiseArray;
+          if(product.PricebookEntries && product.PricebookEntries.records && product.PricebookEntries.records.length > 0){
+            promiseArray = [];
+            for(var key in priceMap){
+              promiseArray.push( doCallout('POST', 'variants/' + product.Shopify_Id__c + '/metafields.json', {
+                  "metafield" : {
+                    "namespace" : "price",
+                    "key" : key,
+                    "value" : product.PricebookEntries.records[0][priceMap[key]] * 100,
+                    "value_type" : "integer"
+                  }
+              }));
+            }
+          }
           var postData = {
             "variant" : {
               "id" : product.Shopify_Id__c,
@@ -109,9 +140,17 @@ module.exports = function(utils, conn){
           if(product.Image__r && product.Image__r.Shopify_Id__c)
             postData.variant.image_id = product.Image__r.Shopify_Id__c;
 
-          doCallout('PUT', 'variants/' + product.Shopify_Id__c + '.json', postData).then(function(){
-            resolve(product.Parent_Product__r.Shopify_Id__c);
-          }, reject);
+          if(promiseArray){
+            Promise.all(promiseArray).then(function(){
+              doCallout('PUT', 'variants/' + product.Shopify_Id__c + '.json', postData).then(function(){
+                resolve(product.Parent_Product__r ? product.Parent_Product__r.Shopify_Id__c : null);
+              }, reject);
+            })
+          }else{
+            doCallout('PUT', 'variants/' + product.Shopify_Id__c + '.json', postData).then(function(){
+              resolve(product.Parent_Product__r ? product.Parent_Product__r.Shopify_Id__c : null);
+            }, reject);
+          }
         });
       };
 

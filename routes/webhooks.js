@@ -1,5 +1,15 @@
 module.exports = function(route, conn, utils){
 
+  /**
+  * All webhook requests go through webhooks
+  */
+  //authenticate requests
+  route.use(function(req, res, next){
+      if(utils.verifyWebhook(req))
+        next();
+      else
+        res.status(401).send("Invalid Signature");
+  });
 
   /**************************
 	 * Product

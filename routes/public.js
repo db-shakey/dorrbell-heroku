@@ -1,4 +1,16 @@
 module.exports = function(apiRoutes, conn, utils){
+
+	apiRoutes.use(function(req, res, next){
+	    if(utils.checkToken(req))
+	    next();
+	    else{
+	        return res.status(403).send({
+	            success : false,
+	            message : 'Unauthorized Application'
+	        });
+	    }
+	})
+
 	/**************
 	 * GET API METHODS
 	 *************/

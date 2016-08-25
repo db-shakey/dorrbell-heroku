@@ -1,4 +1,4 @@
-module.exports = function(routes, utils, conn){
+module.exports = function(routes, utils, conn, firebase){
   var path = require('path');
   var excludeFields = ['LastModifiedDate', 'OrderNumber', 'CreatedById', 'IsDeleted', 'IsReductionOrder', 'Return_Shopping_Assistant_Phone__c',
                       'CreatedDate', 'Delivery_Shopping_Assistant_Phone__c', 'TotalAmount', 'SystemModstamp', 'LastModifiedById', 'attributes', 'LastViewedDate', 'LastReferencedDate', 'Name', 'Cart_Items__c'];
@@ -13,14 +13,7 @@ module.exports = function(routes, utils, conn){
     }
   }
   var lockRecords = [];
-  /**************
-   * Firebase Server
-   *************/
-  var firebase = require('firebase');
-  firebase.initializeApp({
-    serviceAccount: process.env.firebaseCredentials,
-    databaseURL: process.env.firebaseUrl
-  });
+
   var db = firebase.database();
 
 
@@ -54,14 +47,14 @@ module.exports = function(routes, utils, conn){
   })
 
   var lockRecord = function(key){
-    utils.log('locking record' + key);
+    utils.log('locking record ' + key);
     lockRecords.push(key);
     setTimeout(function(){unlockRecord(key);}, 5000);
   }
 
   var unlockRecord = function(key){
     if(lockRecords.indexOf(key) > -1){
-      utils.log('unlocking record' + key);
+      utils.log('unlocking record ' + key);
       lockRecords.splice(lockRecords.indexOf(key), 1);
     }
   }
@@ -82,7 +75,6 @@ module.exports = function(routes, utils, conn){
   });
 
   routes.post('/fb/retailers', function(req, res){
-    utils.log(req.body);
     var ref = db.ref('retailers');
     var obj = {};
     for(var i = 0; i<req.body.length; i++){

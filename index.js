@@ -37,7 +37,7 @@ app.use(bodyParser.json({
 var apiRoutes = express.Router();
 var webhooks = express.Router();
 var sfRoutes = express.Router();
-
+var retailRoutes = express.Router();
 
 var conn = new jsforce.Connection({
     maxRequest : 50,
@@ -49,6 +49,11 @@ conn.login(process.env.sfUsername, process.env.sfPassword, function(err, res){
     if(err){return console.error(err);}
 });
 
+var firebase = require('firebase');
+firebase.initializeApp({
+  serviceAccount: process.env.firebaseCredentials,
+  databaseURL: process.env.firebaseUrl
+});
 
 
 var user = require('./modules/user')(crypto, jwt);
@@ -76,87 +81,19 @@ apiRoutes.post('/error', function(req, res){
     });
 });
 
-/**
-* All webhook requests go through webhooks
-*/
-//authenticate requests
-webhooks.use(function(req, res, next){
-    if(user.verifyWebhook(req))
-      next();
-    else
-      res.status(401).send("Invalid Signature");
-});
+
 
 
 require('./routes/webhooks')(webhooks, conn, user);
-
-
-/**
-* All salesforce requests go through sf
-*/
-//authenticate requests
-sfRoutes.use(function(req, res, next){
-    if(user.checkSfToken(req))
-    next();
-    else{
-        return res.status(403).send({
-            success : false,
-            message : 'Unauthorized Application'
-        });
-    }
-});
 var sf = require('./routes/salesforce')(sfRoutes, user);
-var fb = require('./routes/firebase')(sfRoutes, user, conn);
+var fb = require('./routes/firebase')(sfRoutes, user, conn, firebase);
 sf.startProductPoll(conn);
 
-
-/**
-* All API requests go through apiRoutes
-*/
-//authenticate requests
-apiRoutes.use(function(req, res, next){
-    if(user.checkToken(req))
-    next();
-    else{
-        return res.status(403).send({
-            success : false,
-            message : 'Unauthorized Application'
-        });
-    }
-})
 require('./routes/public')(apiRoutes, conn, user);
-require('./routes/retailer/public')(apiRoutes, conn, user);
-
-// route middleware to verify a token
-apiRoutes.use(function(req, res, next) {
-    // check header or url parameters or post parameters for token
-    var token = req.body.token || req.query.token || req.headers['x-access-token'];
-    // decode token
-    if (token) {
-        // verifies secret and checks exp
-        jwt.verify(token, user.getPassword(), {ignoreExpiration : true}, function(err, decoded) {
-            if (err) {
-                return res.json({ success: false, message: 'Failed to authenticate token.' });
-            } else {
-                // if everything is good, save to request for use in other routes
-                req.decoded = decoded;
-                next();
-            }
-        });
-    } else {
-        // if there is no token
-        // return an error
-        return res.status(403).send({
-            success: false,
-            message: 'No token provided.'
-        });
-    }
-});
+require('./routes/retail')(retailRoutes, conn, user, firebase);
 
 var socketUtils = require('./modules/utils')();
-require('./routes/mobile/authenticated')(apiRoutes, conn, socketUtils, user);
-require('./routes/retailer/private')(apiRoutes, conn, user);
-
+require('./routes/mobile')(apiRoutes, conn, socketUtils, user);
 
 
 /**
@@ -165,6 +102,7 @@ require('./routes/retailer/private')(apiRoutes, conn, user);
 app.use('/api', apiRoutes);
 app.use('/webhook', webhooks);
 app.use('/sf', sfRoutes);
+app.use('/retail', retailRoutes);
 
 // The error handler must be before any other error middleware
 app.use(raven.middleware.express.errorHandler('https://d9174acab3fe487eb8a8e1045ee5b66c:dcf700841bea4f58a9d85d5c2519a3b3@app.getsentry.com/87887'));

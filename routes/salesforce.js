@@ -1,5 +1,8 @@
 module.exports = function(routes, utils){
 
+
+
+
   var braintree = require("braintree");
   var shopify = require('../modules/shopify')(utils);
 
@@ -10,6 +13,21 @@ module.exports = function(routes, utils){
 	}
 
   if(routes){
+    /**
+    * All salesforce requests go through sf
+    */
+    //authenticate requests
+    routes.use(function(req, res, next){
+        if(utils.checkSfToken(req))
+        next();
+        else{
+            return res.status(403).send({
+                success : false,
+                message : 'Unauthorized Application'
+            });
+        }
+    });
+
     routes.post('/transaction/clone', function(req, res){
       var gateway;
 
@@ -59,35 +77,8 @@ module.exports = function(routes, utils){
       shopify.getAllProducts(vendor).then(function(products){
         utils.log('syncing ' + products.length + ' products');
         var promiseArray = new Array();
-        var variantArray = new Array();
         var existingImages = new Array();
 
-        var getMetafields = function(index){
-          utils.log('getting metafields ' + index);
-          setTimeout(function(){
-            if(index < variantArray.length){
-              promiseArray.push(shopify.getVariantMetafields(variantArray[index]));
-              getMetafields(index + 1);
-            }else{
-              finalize();
-            }
-          }, 1000);
-        }
-
-        var finalize = function(){
-          utils.log('finalizing');
-          Promise.all(promiseArray).then(function(metadata){
-            var body = {
-              "products" : products,
-              "metadata" : metadata
-            };
-            utils.log(body);
-            conn.apex.put('/Product/', body);
-            utils.log('finished sync process at ' + new Date());
-          }, function(err){
-            onError(err, res);
-          });
-        }
 
         var deletingImages = new Array();
         var total;
@@ -136,17 +127,27 @@ module.exports = function(routes, utils){
 
         for(var i = 0; i<products.length; i++){
           for(var x = 0; x <products[i].variants.length; x++){
-            variantArray.push(products[i].variants[x].id);
+            promiseArray.push(shopify.getVariantMetafields(products[i].variants[x].id));
           }
           for(var x = 0; x < products[i].images.length; x++){
             existingImages.push(products[i].images[x].id);
           }
         }
-        utils.log('generated variant array ' + variantArray.length + ' and image array ' + existingImages.length);
 
         findUnusedImages();
 
-        getMetafields(0);
+        Promise.all(promiseArray).then(function(metadata){
+          var body = {
+            "products" : products,
+            "metadata" : metadata
+          };
+          utils.log(body);
+          conn.apex.put('/Product/', body);
+          utils.log('finished sync process at ' + new Date());
+        }, function(err){
+          onError(err, res);
+        });
+
       }, function(err){
         onError(err, res);
       });
