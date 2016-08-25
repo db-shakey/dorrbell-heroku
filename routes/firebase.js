@@ -80,7 +80,7 @@ module.exports = function(routes, utils, conn, firebase){
     for(var i = 0; i<req.body.length; i++){
       obj[req.body[i].recordId] = req.body[i];
     }
-    ref.set(obj);
+    ref.update(obj);
 
     res.status(200).send();
   });
