@@ -270,8 +270,6 @@ module.exports = function(apiRoutes, conn, socketUtils, utils){
 
 			response.json(data.records);
 		});
-
-
 	});
 
 	apiRoutes.post('/update/:sObject', function(request, response){
