@@ -307,7 +307,9 @@ module.exports = function(apiRoutes, conn, utils){
 			Status: 'Draft',
 			Pricebook2 : {External_Id__c : 'standard'},
 			Financial_Status__c : 'Paid',
-			Settled__c : true
+			Settled__c : true,
+			In_Home_Try_On_Start__c : new Date(),
+			In_Home_Try_On_End__c : new Date()
 		}).then(function(record){
 			var orderId = record.id;
 			conn.sobject("Order_Store__c").create({
