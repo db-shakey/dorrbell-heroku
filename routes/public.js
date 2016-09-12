@@ -63,17 +63,38 @@ module.exports = function(apiRoutes, conn, utils){
 		}, error);
 	});
 
-	apiRoutes.post('/forceSync', function(req, res){
-		var sf = require('./salesforce')(null, utils);
-		sf.syncProducts(conn, req.query.vendor);
-		res.status(200).send();
-	})
 
+	apiRoutes.get('/products', function(req, res){
+		var query = "SELECT Id, \
+												Name, \
+												Image__r.Image_Source__c, \
+												Image__r.Image_Thumb__c, \
+												Family, \
+												Store__r.Name, \
+												Brand__c, \
+												(SELECT Id FROM Variants__r WHERE IsActive = TRUE) \
+									FROM Product2 \
+									WHERE RecordType.DeveloperName = 'Product' \
+												AND IsActive = TRUE \
+												AND Image__c != null \
+								ORDER BY Family ASC LIMIT 7";
+		conn.query(query).then(function(results){
+			res.status(200).send(results);
+		}, function(err){
+			res.status(400).send(err);
+		})
+	})
 
 
 	/**************
 	 * POST API METHODS
 	 *************/
+	 apiRoutes.post('/forceSync', function(req, res){
+ 		var sf = require('./salesforce')(null, utils);
+ 		sf.syncProducts(conn, req.query.vendor);
+ 		res.status(200).send();
+ 	})
+
 	apiRoutes.post('/authenticate', function(req, res){
 	  conn.query("SELECT Id, \
 	  					Password__c, \
@@ -277,6 +298,42 @@ module.exports = function(apiRoutes, conn, utils){
 		function(err){
 			res.status(400).send(err);
 		});
+	})
+
+	apiRoutes.post('/order', function(req, res){
+		conn.sobject("Order").create({
+			Account: {External_Id__c : 'Undefined'},
+			EffectiveDate : new Date(),
+			Status: 'Draft',
+			Pricebook2 : {External_Id__c : 'standard'},
+			Financial_Status__c : 'Paid',
+			Settled__c : true
+		}).then(function(record){
+			var orderId = record.id;
+			conn.sobject("Order_Store__c").create({
+				Order__c : orderId,
+				Store__r : {External_Id__c : "Dorrbell"},
+				Status__c : 'New',
+				External_Id__c : 'Dorrbell:' + orderId
+			}).then(function(osRecord){
+				var orderStoreId = osRecord.id;
+
+				var orderItemArray = new Array();
+				for(var i = 0; i<req.body.items.length; i++){
+					var product = req.body.items[i];
+					orderItemArray.push({
+						OrderId: orderId,
+						PricebookEntryId : product.PricebookEntries.records[0].Id,
+						Quantity: 1,
+						UnitPrice : product.PricebookEntries.records[0].UnitPrice,
+						Order_Store__c : orderStoreId
+					})
+				}
+				conn.sobject("OrderItem").create(orderItemArray).then(function(data){
+					res.status(200).send(data)
+				}, function(err){res.status(400).send(err);});
+			}, function(err){res.status(400).send(err);});
+		}, function(err){res.status(400).send(err);});
 	})
 
 };
