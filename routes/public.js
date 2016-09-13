@@ -309,7 +309,8 @@ module.exports = function(apiRoutes, conn, utils){
 			Financial_Status__c : 'Paid',
 			Settled__c : true,
 			In_Home_Try_On_Start__c : new Date(),
-			In_Home_Try_On_End__c : new Date()
+			In_Home_Try_On_End__c : new Date(),
+			ShipToContactId : '003P000000uxokC'
 		}).then(function(record){
 			var orderId = record.id;
 			conn.sobject("Order_Store__c").create({
