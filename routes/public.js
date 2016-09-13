@@ -314,7 +314,9 @@ module.exports = function(apiRoutes, conn, utils){
 			ShippingStreet : '9060 Pine Cove Dr.',
 			ShippingState : 'MI',
 			ShippingCity : 'Whitmore Lake',
-			ShippingPostalCode : '48189'
+			ShippingPostalCode : '48189',
+			ShippingLatitude : '42.417479',
+			ShippingLongitude : '-83.752472'
 		}).then(function(record){
 			var orderId = record.id;
 			conn.sobject("Order_Store__c").create({
