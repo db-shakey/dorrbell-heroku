@@ -85,6 +85,8 @@ module.exports = function(routes, conn, utils, firebase){
       }, function(err){
         res.status(400).send(err);
       });
+    }, function(err){
+      res.status(400).send(err);
     });
   })
 
