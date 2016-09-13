@@ -310,7 +310,11 @@ module.exports = function(apiRoutes, conn, utils){
 			Settled__c : true,
 			In_Home_Try_On_Start__c : new Date(),
 			In_Home_Try_On_End__c : new Date(),
-			ShipToContactId : '003P000000uxokC'
+			ShipToContactId : '003P000000uxokC',
+			ShippingStreet : '9060 Pine Cove Dr.',
+			ShippingState : 'MI',
+			ShippingCity : 'Whitmore Lake',
+			ShippingPostalCode : '48189'
 		}).then(function(record){
 			var orderId = record.id;
 			conn.sobject("Order_Store__c").create({
