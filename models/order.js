@@ -13,9 +13,9 @@ exports.create = function(req){
       MailingPostalCode : '95134'
     }
   }
-
+  console.log(req.customer);
   return db.getConnection().sobject("Order").create({
-			AccountId: '001410000053iKz',
+			AccountId: '001410000053iKu',
 			EffectiveDate : new Date(),
 			Status: 'Draft',
 			Pricebook2Id : '01s41000001xYVf',
