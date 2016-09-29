@@ -9,6 +9,6 @@ router.get('/', function(req, res){
   }, function(err){
     res.status(400).send(err);
   });
-})
+}) 
 
 module.exports = router;
