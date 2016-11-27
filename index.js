@@ -3,10 +3,7 @@ var app = express();
 var cors = require('cors');
 var bodyParser 		= require('body-parser');
 var jsforceAjaxProxy = require('jsforce-ajax-proxy');
-process.on('uncaughtException', function(err){
-  console.error('uncaughtException: ' + err.message);
-  console.error(err.stack);
-});
+
 if(!process.env.PORT){
   require('node-env-file')(__dirname + '/.env');
 }
@@ -24,9 +21,7 @@ app.set('view engine', 'ejs');
 // app.use(require('./middlewares/salesforce').authenticate)
 //
 app.use(require('./controllers'));
-app.all('/proxy/?*', function(req, res, next){
-  jsforceAjaxProxy()(req, res);
-});
+app.all('/proxy/?*', jsforceAjaxProxy({ enableCORS: false }));
 
 app.listen(app.get('port'), function() {
   console.log('Node app is running on port', app.get('port'));
