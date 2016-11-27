@@ -19,7 +19,6 @@ app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 
 app.all('/proxy/?*', jsforceAjaxProxy({ enableCORS: false }));
-app.use(require('./middlewares/salesforce').authenticate)
 app.use(require('./controllers'));
 
 app.listen(app.get('port'), function() {

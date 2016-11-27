@@ -3,7 +3,9 @@ var express = require('express')
 
 //
 // router.use('/contacts', require('./contacts'));
+router.use('/authenticate', require('./authenticate'));
+router.use(require('../middlewares/salesforce').authenticate)
 router.use('/orders', require('./orders'));
 router.use('/products', require('./products'))
-router.use('/authenticate', require('./authenticate'));
+
 module.exports = router
