@@ -40,4 +40,14 @@ router.post('/Cart', function(req, res){
   })
 })
 
+router.put('/Cart', function(req, res){
+  var conn = res.locals.connection;
+  conn.sobject("Apttus_Config2__Order__c").update(req.body, function(err, ret){
+    if(!err)
+      res.status(200).send(ret);
+    else
+      res.status(400).send(err);
+  })
+})
+
 module.exports = router;
